@@ -1,0 +1,9 @@
+services:
+  price-tracker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: price_tracker_app
+    ports:
+      - "4200:80"
+    restart: unless-stopped

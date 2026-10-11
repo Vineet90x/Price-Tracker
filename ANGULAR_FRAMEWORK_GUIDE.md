@@ -17,6 +17,7 @@
 10. [Modern Dependency Injection (`inject()`)](#10-modern-dependency-injection-inject)
 11. [Template Switch Syntax (`@switch / @case / @default`)](#11-template-switch-syntax-switch--case--default)
 12. [PrimeNG UI Integration & Skeletons (`providePrimeNG`, `<p-skeleton>`)](#12-primeng-ui-integration--skeletons-provideprimeng-p-skeleton)
+13. [Docker Multi-Stage Build & Nginx SPA Routing](#13-docker-multi-stage-build--nginx-spa-routing)
 
 
 
@@ -253,5 +254,28 @@ Instead of manually styling placeholder loader boxes using custom CSS, PrimeNG p
 - Global configuration: [`src/app/app.config.ts:L15-L21`](file:///home/alpha/Documents/Price-Tracker/src/app/app.config.ts#L15-L21)
 - Component import: [`src/app/features/watchlist/watchlist.ts:L3`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L3)
 - Template usage: [`src/app/features/watchlist/watchlist.ts:121-125`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L121-L125)
+
+---
+
+## 13. Docker Multi-Stage Build & Nginx SPA Routing
+
+### Plain English Explanation
+Think of compiling an Angular app like baking a cake.
+1. You need a large kitchen with heavy mixers, bowls, ovens, and raw ingredients (**Stage 1: Node.js Builder Container**).
+2. But when serving the cake to customers, you don't bring the heavy oven and mixer to the customer's table! You only bring the finished cake on a small, elegant plate (**Stage 2: Lightweight Nginx Container**).
+
+This is why a **Multi-Stage Dockerfile** is the industry standard:
+- Node.js builds the app (`npm run build`).
+- Only the compiled HTML/JS/CSS output is copied into Nginx (`nginx:alpine`), leaving behind heavy development tools. Result: Image size shrinks from ~1.2GB down to ~25MB!
+
+### Why `try_files $uri $uri/ /index.html;` is Required:
+In a traditional multi-page website, visiting `/portfolio` looks for a folder named `portfolio/index.html` on the hard drive. 
+In Angular SPAs, `/portfolio` is a **virtual client-side route**. Nginx must be configured to catch all non-file URLs and deliver `index.html`, allowing Angular's client router to render the correct view without a 404 error!
+
+### Where Used in Our Codebase:
+- Nginx configuration: [`nginx.conf:L8-L10`](file:///home/alpha/Documents/Price-Tracker/nginx.conf#L8-L10)
+- Multi-stage Dockerfile: [`Dockerfile:L1-L24`](file:///home/alpha/Documents/Price-Tracker/Dockerfile#L1-L24)
+- Docker Compose: [`docker-compose.yml:L1-L9`](file:///home/alpha/Documents/Price-Tracker/docker-compose.yml#L1-L9)
+
 
 

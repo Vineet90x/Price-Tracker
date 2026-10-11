@@ -286,3 +286,31 @@ export class Watchlist {
 
 2. **Adding App-Wide Services:**
    - Place single instance services inside `src/app/core/services/service-name.service.ts` with `@Injectable({ providedIn: 'root' })`.
+
+---
+
+## 5. Docker Containerization & Cross-Platform Deployment
+
+To ensure the application runs on any computer without dependency conflicts or manual environment setup, the project includes a production-grade **Multi-Stage Docker configuration**:
+
+### Files Inventory:
+- [`.dockerignore`](file:///home/alpha/Documents/Price-Tracker/.dockerignore): Prevents uploading host `node_modules/`, `.angular/` cache, and git history into the build context.
+- [`nginx.conf`](file:///home/alpha/Documents/Price-Tracker/nginx.conf): Custom Nginx web server config configured with SPA fallback (`try_files $uri $uri/ /index.html;`), gzip compression, and static asset caching.
+- [`Dockerfile`](file:///home/alpha/Documents/Price-Tracker/Dockerfile): Multi-stage container file:
+  - **Stage 1 (Builder):** Uses `node:22-alpine` to install dependencies and run `npm run build -- --configuration production`.
+  - **Stage 2 (Runtime):** Uses lightweight `nginx:alpine` (~25MB total image) to serve compiled static files on port 80.
+- [`docker-compose.yml`](file:///home/alpha/Documents/Price-Tracker/docker-compose.yml): Maps port `4200:80` for single-command startup.
+
+### How to Run on Any Computer:
+```bash
+# Build and start container in detached mode
+docker compose up --build -d
+
+# View live logs
+docker compose logs -f
+
+# Stop container
+docker compose down
+```
+Once started, access `http://localhost:4200` in any browser!
+
