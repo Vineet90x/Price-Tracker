@@ -240,7 +240,9 @@ export class PriceService {
 
     <!-- Live asset grid iterating over pricesSignal -->
     @for (stock of priceService.pricesSignal(); track stock.symbol) {
-      <div [class.border-emerald-500/50]="stock.price > stock.previousPrice">
+      <div 
+        [class.border-emerald-500/50]="stock.change >= 0"
+        [class.border-rose-500/50]="stock.change < 0">
         <!-- Brand Gradient Logo Avatar -->
         <div [class]="getLogoBgClass(stock.symbol)">
           @switch (stock.symbol) {

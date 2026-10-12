@@ -4,6 +4,11 @@ import { Observable, interval } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { StockPrice } from '../models/stock.model';
 
+export interface PricePoint {
+  time: number; // Unix timestamp in seconds (UTCTimestamp)
+  value: number;
+}
+
 interface InitialAsset {
   symbol: string;
   name: string;
@@ -26,6 +31,9 @@ export class PriceService {
   /** In-memory state tracking current asset prices across ticks */
   private currentPricesMap: Map<string, StockPrice> = new Map();
 
+  /** Running history of up to 50 price points per asset for charts */
+  private priceHistoryMap: Map<string, PricePoint[]> = new Map();
+
   /** Public Observable stream emitting live updated price arrays every 1.5s */
   readonly prices$: Observable<StockPrice[]>;
 
@@ -42,7 +50,9 @@ export class PriceService {
   readonly totalTracked: Signal<number>;
 
   constructor() {
-    // 1. Initialize baseline stock price state
+    const now = Math.floor(Date.now() / 1000);
+
+    // 1. Initialize baseline stock price state and pre-seed history
     this.initialAssets.forEach((asset) => {
       this.currentPricesMap.set(asset.symbol, {
         symbol: asset.symbol,
@@ -53,6 +63,18 @@ export class PriceService {
         changePercent: 0,
         updatedAt: new Date(),
       });
+
+      // Seed 25 historical points so chart renders with an initial wave
+      const initialPoints: PricePoint[] = [];
+      let tempPrice = asset.basePrice * 0.98;
+      for (let i = 25; i >= 1; i--) {
+        const timePoint = now - i * 2;
+        const drift = (Math.random() - 0.48) * (asset.basePrice * 0.005);
+        tempPrice = Math.max(0.01, Number((tempPrice + drift).toFixed(2)));
+        initialPoints.push({ time: timePoint, value: tempPrice });
+      }
+      initialPoints.push({ time: now, value: asset.basePrice });
+      this.priceHistoryMap.set(asset.symbol, initialPoints);
     });
 
     // 2. Build the continuous RxJS random-walk stream
@@ -76,11 +98,19 @@ export class PriceService {
   }
 
   /**
+   * Returns current running history data points for a symbol
+   */
+  getPriceHistory(symbol: string): PricePoint[] {
+    return this.priceHistoryMap.get(symbol) || [];
+  }
+
+  /**
    * Random walk generator algorithm.
    * Adjusts each price up or down by a small random percentage (-0.4% to +0.5%).
    */
   private calculateNextPrices(): StockPrice[] {
     const updatedList: StockPrice[] = [];
+    const nowSeconds = Math.floor(Date.now() / 1000);
 
     this.initialAssets.forEach((asset) => {
       const current = this.currentPricesMap.get(asset.symbol)!;
@@ -108,6 +138,17 @@ export class PriceService {
       // Store updated object back into state map
       this.currentPricesMap.set(asset.symbol, updatedStock);
       updatedList.push(updatedStock);
+
+      // Append point to history (keep max 50 points)
+      const history = this.priceHistoryMap.get(asset.symbol) || [];
+      // Ensure strictly increasing timestamp for lightweight-charts
+      const lastPoint = history[history.length - 1];
+      const validTime = lastPoint && nowSeconds <= lastPoint.time ? lastPoint.time + 1 : nowSeconds;
+      history.push({ time: validTime, value: newPrice });
+      if (history.length > 50) {
+        history.shift();
+      }
+      this.priceHistoryMap.set(asset.symbol, history);
     });
 
     return updatedList;

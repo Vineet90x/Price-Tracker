@@ -49,9 +49,8 @@ import { PriceService } from '../../core/services/price.service';
         @for (stock of priceService.pricesSignal(); track stock.symbol) {
           <div 
             class="bg-slate-900/80 border rounded-2xl p-5 transition-all duration-300 hover:border-slate-700 shadow-lg relative overflow-hidden group cursor-pointer"
-            [class.border-emerald-500/50]="stock.price > stock.previousPrice"
-            [class.border-rose-500/50]="stock.price < stock.previousPrice"
-            [class.border-slate-800]="stock.price === stock.previousPrice">
+            [class.border-emerald-500/50]="stock.change >= 0"
+            [class.border-rose-500/50]="stock.change < 0">
             
             <div class="flex items-start justify-between">
               <div class="flex items-center gap-3">

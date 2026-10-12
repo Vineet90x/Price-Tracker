@@ -23,6 +23,7 @@
     "@angular/ssr": "^22.2.2",
     "@primeuix/themes": "^3.0.1",
     "express": "^5.1.0",
+    "lightweight-charts": "^5.2.1",
     "primeng": "^22.1.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
