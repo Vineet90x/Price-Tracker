@@ -1,12 +1,13 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Skeleton } from 'primeng/skeleton';
 import { PriceService } from '../../core/services/price.service';
+import { StockChart } from './components/stock-chart';
 
 @Component({
   selector: 'app-watchlist',
   standalone: true,
-  imports: [DatePipe, Skeleton],
+  imports: [DatePipe, Skeleton, StockChart],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       <!-- Header & Top Stats Banner -->
@@ -24,7 +25,7 @@ import { PriceService } from '../../core/services/price.service';
               <span>LIVE FEED</span>
             </div>
           </div>
-          <p class="text-slate-400 mt-1">Real-time stock and crypto market prices.</p>
+          <p class="text-slate-400 mt-1">Real-time stock and crypto market prices. Click any card to view its chart.</p>
         </div>
 
         <!-- Summary Badges using computed signals -->
@@ -48,9 +49,12 @@ import { PriceService } from '../../core/services/price.service';
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (stock of priceService.pricesSignal(); track stock.symbol) {
           <div 
+            (click)="selectedSymbol.set(stock.symbol)"
             class="bg-slate-900/80 border rounded-2xl p-5 transition-all duration-300 hover:border-slate-700 shadow-lg relative overflow-hidden group cursor-pointer"
             [class.border-emerald-500/50]="stock.change >= 0"
-            [class.border-rose-500/50]="stock.change < 0">
+            [class.border-rose-500/50]="stock.change < 0"
+            [class.ring-2]="selectedSymbol() === stock.symbol"
+            [class.ring-cyan-400]="selectedSymbol() === stock.symbol">
             
             <div class="flex items-start justify-between">
               <div class="flex items-center gap-3">
@@ -138,12 +142,20 @@ import { PriceService } from '../../core/services/price.service';
           </div>
         }
       </div>
+
+      <!-- Live TradingView Chart for Selected Symbol -->
+      @if (selectedSymbol()) {
+        <div class="mt-8">
+          <app-stock-chart [symbol]="selectedSymbol()!" />
+        </div>
+      }
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Watchlist {
   readonly priceService = inject(PriceService);
+  readonly selectedSymbol = signal<string>('BTC');
 
   isCrypto(symbol: string): boolean {
     return symbol === 'BTC' || symbol === 'ETH';

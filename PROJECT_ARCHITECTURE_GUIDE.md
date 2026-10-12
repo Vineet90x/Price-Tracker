@@ -227,53 +227,48 @@ export class PriceService {
 @Component({
   selector: 'app-watchlist',
   standalone: true,
-  imports: [DatePipe, Skeleton],
+  imports: [DatePipe, Skeleton, StockChart],
   template: `
-    <!-- Clean Live Streaming Badge -->
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-800/50 text-cyan-400 text-xs font-semibold">
-      <span class="relative flex h-2 w-2">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-      </span>
-      <span>LIVE FEED</span>
-    </div>
-
-    <!-- Live asset grid iterating over pricesSignal -->
+    <!-- Header with Live Feed status -->
+    ...
+    <!-- Asset Grid with Click Selection -->
     @for (stock of priceService.pricesSignal(); track stock.symbol) {
       <div 
-        [class.border-emerald-500/50]="stock.change >= 0"
-        [class.border-rose-500/50]="stock.change < 0">
-        <!-- Brand Gradient Logo Avatar -->
-        <div [class]="getLogoBgClass(stock.symbol)">
-          @switch (stock.symbol) {
-            @case ('BTC') { <svg>...</svg> }
-            @case ('ETH') { <svg>...</svg> }
-            @default { <svg>...</svg> }
-          }
-        </div>
-        <h3>{{ stock.name }}</h3>
-        <span>{{ stock.price }}</span>
+        (click)="selectedSymbol.set(stock.symbol)"
+        [class.ring-2]="selectedSymbol() === stock.symbol"
+        [class.ring-cyan-400]="selectedSymbol() === stock.symbol">
+        ...
       </div>
-    } @empty {
-      <!-- PrimeNG Official Skeleton Component Loader -->
-      <div class="col-span-full grid grid-cols-1 md:grid-cols-3 gap-4">
-        <p-skeleton width="100%" height="160px" borderRadius="16px" />
-      </div>
+    }
+
+    <!-- Live TradingView Chart for Selected Symbol -->
+    @if (selectedSymbol()) {
+      <app-stock-chart [symbol]="selectedSymbol()!" />
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Watchlist {
   readonly priceService = inject(PriceService);
+  readonly selectedSymbol = signal<string>('BTC');
 }
 ```
-- **Line 26:** Clean live feed pill with glowing status dot.
-- **Line 33:** Asset cards display sleek brand gradient logos (Bitcoin gold, Ethereum indigo, Reliance blue, TCS purple, Infosys sky blue).
-- **Line 41:** Integrated PrimeNG `<p-skeleton>` UI component for rendering smooth, accessible loading state skeletons.
+
+---
+
+### Step 4: Live TradingView Chart Per Symbol (`lightweight-charts`)
+
+#### Objectives Accomplished:
+- Installed official TradingView `lightweight-charts` library.
+- Enhanced `PriceService` with historical data series memory (rolling window of 50 data points).
+- Built standalone `StockChart` component ([`src/app/features/watchlist/components/stock-chart.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts)) using HTML5 Canvas AreaSeries.
+- Handled Angular SSR safely using `isPlatformBrowser(platformId)` to prevent server-side DOM errors.
+- Connected user selection so clicking any card updates `selectedSymbol` signal and instantly streams live price ticks to the chart.
 
 ---
 
 ## 4. How to Extend / Modify This Codebase Independently
+
 
 
 

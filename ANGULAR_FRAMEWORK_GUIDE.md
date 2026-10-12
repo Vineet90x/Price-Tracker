@@ -18,6 +18,8 @@
 11. [Template Switch Syntax (`@switch / @case / @default`)](#11-template-switch-syntax-switch--case--default)
 12. [PrimeNG UI Integration & Skeletons (`providePrimeNG`, `<p-skeleton>`)](#12-primeng-ui-integration--skeletons-provideprimeng-p-skeleton)
 13. [Docker Multi-Stage Build & Nginx SPA Routing](#13-docker-multi-stage-build--nginx-spa-routing)
+14. [Third-Party Canvas Integration & Safe SSR (`isPlatformBrowser`, `ElementRef`)](#14-third-party-canvas-integration--safe-ssr-isplatformbrowser-elementref)
+
 
 
 
@@ -276,6 +278,36 @@ In Angular SPAs, `/portfolio` is a **virtual client-side route**. Nginx must be 
 - Nginx configuration: [`nginx.conf:L8-L10`](file:///home/alpha/Documents/Price-Tracker/nginx.conf#L8-L10)
 - Multi-stage Dockerfile: [`Dockerfile:L1-L24`](file:///home/alpha/Documents/Price-Tracker/Dockerfile#L1-L24)
 - Docker Compose: [`docker-compose.yml:L1-L9`](file:///home/alpha/Documents/Price-Tracker/docker-compose.yml#L1-L9)
+
+---
+
+## 14. Third-Party Canvas Integration & Safe SSR (`isPlatformBrowser`, `ElementRef`)
+
+### Plain English Explanation
+Think of Server-Side Rendering (SSR) as an artist sketching your web page on paper inside a server warehouse before sending it to you.
+- Normal HTML text and buttons can easily be sketched on paper.
+- But an interactive **HTML5 `<canvas>`** drawing library (like TradingView) needs a real screen, mouse cursor, and graphics card to draw!
+- If the server tries to run `createChart()`, it immediately crashes with `ReferenceError: window is not defined` because servers don't have windows or screens.
+
+### How `isPlatformBrowser(platformId)` Solves This:
+Angular provides `PLATFORM_ID` to check where the code is executing:
+```typescript
+private readonly platformId = inject(PLATFORM_ID);
+
+ngAfterViewInit(): void {
+  // Only execute canvas chart initialization if running in the user's browser!
+  if (!isPlatformBrowser(this.platformId)) {
+    return;
+  }
+  this.initChart();
+}
+```
+
+### Where Used in Our Codebase:
+- SSR Guard: [`src/app/features/watchlist/components/stock-chart.ts:L63-L65`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts#L63-L65)
+- Canvas Element Reference: [`src/app/features/watchlist/components/stock-chart.ts:L51`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts#L51)
+- Responsive ResizeObserver: [`src/app/features/watchlist/components/stock-chart.ts:L128-L134`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts#L128-L134)
+
 
 
 
