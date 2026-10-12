@@ -108,10 +108,28 @@ export class StockChart implements AfterViewInit, OnDestroy, OnChanges {
         vertLine: { color: 'rgba(6, 182, 212, 0.4)', width: 1 },
         horzLine: { color: 'rgba(6, 182, 212, 0.4)', width: 1 },
       },
+      localization: {
+        timeFormatter: (time: number) => {
+          return new Date(time * 1000).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          });
+        },
+      },
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.08)',
         timeVisible: true,
         secondsVisible: true,
+        tickMarkFormatter: (time: number) => {
+          return new Date(time * 1000).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          });
+        },
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.08)',

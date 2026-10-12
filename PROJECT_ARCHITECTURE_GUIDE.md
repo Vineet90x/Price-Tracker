@@ -263,11 +263,13 @@ export class Watchlist {
 - Enhanced `PriceService` with historical data series memory (rolling window of 50 data points).
 - Built standalone `StockChart` component ([`src/app/features/watchlist/components/stock-chart.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts)) using HTML5 Canvas AreaSeries.
 - Handled Angular SSR safely using `isPlatformBrowser(platformId)` to prevent server-side DOM errors.
+- Synchronized time formatting between the card's `DatePipe` and the chart's `timeScale.tickMarkFormatter` and `localization.timeFormatter` to match the user's local timezone (IST) down to the exact second.
 - Connected user selection so clicking any card updates `selectedSymbol` signal and instantly streams live price ticks to the chart.
 
 ---
 
 ## 4. How to Extend / Modify This Codebase Independently
+
 
 
 
