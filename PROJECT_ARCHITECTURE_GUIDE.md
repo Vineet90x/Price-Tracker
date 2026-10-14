@@ -313,3 +313,80 @@ docker compose down
 ```
 Once started, access `http://localhost:4200` in any browser!
 
+
+---
+
+## 6. Step 5 — Search & Add Symbol
+
+### What was added
+**Files changed:** `price.service.ts`, `watchlist.ts`
+
+---
+
+### `PriceService` — Key structural changes
+
+#### `symbolUniverse` (replaces `initialAssets`)
+The old `initialAssets` was a fixed 5-item array. Now a full 25-asset universe (11 crypto + 14 Indian stocks) lives here. Only a subset starts ticking — the user can add the rest via search.
+
+#### `trackedAssets` — mutable, starts at 5
+```typescript
+private trackedAssets: AssetInfo[];   // starts as 5, grows on addSymbol()
+```
+`calculateNextPrices()` now iterates `trackedAssets` instead of a fixed list.
+
+#### `seedAssets()` — extracted private helper
+Both the constructor init AND `addSymbol()` call this — DRY principle. One place to change if seeding strategy changes.
+
+#### `addSymbol(symbol)` — public entry point
+```typescript
+addSymbol(symbol: string): void {
+  if (this.isTracked(symbol)) return;      // no-op guard
+  const asset = this.symbolUniverse.find(...);
+  this.seedAssets([asset], now);           // seed maps immediately
+  this.trackedAssets.push(asset);          // included in next tick
+}
+```
+The new card appears in the UI on the very next 1.5s interval tick.
+
+#### `isCrypto(symbol)` — moved from Watchlist component to service
+Reason: reusable by chart + portfolio without prop-drilling.
+
+---
+
+### `Watchlist` component — Search pipeline
+
+```typescript
+// src/app/features/watchlist/watchlist.ts — constructor
+this.searchResults = toSignal(
+  this.searchControl.valueChanges.pipe(
+    startWith(''),        // 1. Emit initial value so signal isn't undefined
+    debounceTime(300),    // 2. Wait 300ms after user stops typing
+    switchMap(term =>     // 3. Cancel previous, run latest only
+      of(this.priceService.searchSymbols(term ?? ''))
+    )
+  ),
+  { initialValue: [] }
+);
+```
+
+| Operator | Why it's here |
+|----------|--------------|
+| `startWith('')` | `toSignal` needs an initial emission. Without this, `searchResults` is `undefined` on first render. |
+| `debounceTime(300)` | Prevents searching on every keystroke. Only fires 300ms after typing stops. |
+| `switchMap` | Cancels previous inner Observable when a new term arrives. With `mergeMap`, a slow result for 'bit' could overwrite a fast result for 'bitcoin'. When this becomes an HTTP call in Phase 2, this cancellation is critical — and the component won't change. |
+
+#### The blur-click problem & fix
+When user clicks "Add" in the dropdown: blur fires → dropdown closes → click never registers.
+- `onSearchBlur()` delays closing by 150ms so the click fires first
+- `(mousedown)="$event.preventDefault()"` on dropdown prevents blur from firing when clicking inside
+
+---
+
+### Decision Log — Step 5
+
+| Decision | Choice | Why |
+|----------|--------|-----|
+| Debounce delay | 300ms | Responsive but not noisy |
+| Already-tracked symbols | Show with "✓ Tracking" badge | Better UX than hiding |
+| Search scope | Ticker + full name, case-insensitive | Type "bitcoin" → find BTC, "tata" → find TCS |
+| `isCrypto()` location | PriceService | Reusable, single source of truth |

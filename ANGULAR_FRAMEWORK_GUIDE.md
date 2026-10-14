@@ -311,3 +311,93 @@ ngAfterViewInit(): void {
 
 
 
+
+---
+
+## Step 5 Concepts — RxJS Search Operators
+
+### `FormControl` (Reactive Forms)
+A `FormControl` is Angular's way of tracking the value and state of a single form input.
+
+```typescript
+// Import
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+
+// Create
+readonly searchControl = new FormControl('');  // '' = initial value
+
+// In template — binds input to control
+<input [formControl]="searchControl" />
+
+// Access current value anywhere
+this.searchControl.value       // current value
+this.searchControl.valueChanges  // Observable that emits on every change
+```
+
+**Why not `[(ngModel)]`?** `FormControl` gives you an Observable stream via `.valueChanges`, which you can pipe through RxJS operators. `ngModel` doesn't.
+
+---
+
+### `debounceTime(ms)` — Wait for the user to stop typing
+```typescript
+import { debounceTime } from 'rxjs/operators';
+
+searchControl.valueChanges.pipe(
+  debounceTime(300)   // Only emit if 300ms pass with no new value
+)
+```
+
+**Without it:** every keystroke triggers a search → 'b', 'bi', 'bit', 'bitc', 'bitcoi', 'bitcoin' = 7 searches.
+**With it:** only 'bitcoin' triggers — 300ms after typing stops.
+
+**Analogy:** Like "call me back when you're done thinking" — you only respond when the other person pauses.
+
+---
+
+### `switchMap` vs `mergeMap` — The Critical Difference
+
+Both operators transform each emission into a new inner Observable. The difference is what happens when a NEW emission arrives while the previous inner Observable is still running:
+
+| Operator | Behaviour | Use when |
+|----------|-----------|----------|
+| `switchMap` | **Cancels** the previous inner Observable, starts fresh | Only the latest result matters (search, autocomplete) |
+| `mergeMap` | **Keeps all** inner Observables running in parallel | Each result matters independently (parallel tasks) |
+| `concatMap` | **Queues** — waits for previous to finish before starting next | Order matters, no loss (file uploads) |
+
+**The bug `mergeMap` causes in search:**
+```
+User types: 'bit' → 'bitcoin' (fast)
+  mergeMap: search('bit') starts (slow)   → result arrives LAST: ['Bitcoin']
+            search('bitcoin') starts (fast) → result arrives FIRST: ['Bitcoin', 'Binance']
+
+Final result shown: ['Bitcoin']   ← WRONG! Older slower result overwrote the newer one.
+```
+
+**`switchMap` fixes it:**
+```
+User types: 'bit' → 'bitcoin' (fast)
+  switchMap: search('bit') starts
+             'bitcoin' arrives → search('bit') CANCELLED
+             search('bitcoin') starts → result: ['Bitcoin', 'Binance']
+
+Final result shown: ['Bitcoin', 'Binance']   ← CORRECT!
+```
+
+In our app, `searchSymbols()` is synchronous so there's no race visible right now. In Phase 2, when it becomes `http.get('/search?q=' + term)`, this cancellation becomes critical — and the component code won't change at all.
+
+---
+
+### `startWith(value)` — Give a stream an initial emission
+```typescript
+import { startWith } from 'rxjs/operators';
+
+// Without startWith: valueChanges only emits when input changes
+// toSignal gets undefined until first keystroke
+
+// With startWith: immediately emits '' then proceeds normally
+searchControl.valueChanges.pipe(
+  startWith('')   // ← emits '' right away
+)
+```
+Used here because `toSignal()` requires at least one emission to set an initial signal value.
+
