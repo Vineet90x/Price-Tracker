@@ -36,9 +36,9 @@ With **Standalone Components**, a component manages its own dependencies. If it 
 Angular's compiler inspects the `imports` array of the standalone component and links only those specific dependencies at compile time. This enables precise code splitting and tree-shaking, meaning unused Angular modules are automatically stripped out of the production JavaScript bundle.
 
 ### Where Used in Our Codebase:
-- [`src/app/features/watchlist/watchlist.ts:L7`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L7)
-- [`src/app/features/portfolio/portfolio.ts:L5`](file:///home/alpha/Documents/Price-Tracker/src/app/features/portfolio/portfolio.ts#L5)
-- [`src/app/app.ts:L6`](file:///home/alpha/Documents/Price-Tracker/src/app/app.ts#L6)
+- [`src/app/features/watchlist/watchlist.ts:L7`](src/app/features/watchlist/watchlist.ts#L7)
+- [`src/app/features/portfolio/portfolio.ts:L5`](src/app/features/portfolio/portfolio.ts#L5)
+- [`src/app/app.ts:L6`](src/app/app.ts#L6)
 
 ```typescript
 @Component({
@@ -72,9 +72,9 @@ Angular runs a global Change Detection loop whenever async events occur (click h
 When streaming live financial prices ticking every 1.5s, `Default` change detection would re-evaluate the entire page DOM every tick, causing micro-stutters. `OnPush` guarantees extreme rendering efficiency!
 
 ### Where Used in Our Codebase:
-- [`src/app/features/watchlist/watchlist.ts:L106`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L106)
-- [`src/app/features/portfolio/portfolio.ts:L17`](file:///home/alpha/Documents/Price-Tracker/src/app/features/portfolio/portfolio.ts#L17)
-- [`src/app/app.ts:L10`](file:///home/alpha/Documents/Price-Tracker/src/app/app.ts#L10)
+- [`src/app/features/watchlist/watchlist.ts:L106`](src/app/features/watchlist/watchlist.ts#L106)
+- [`src/app/features/portfolio/portfolio.ts:L17`](src/app/features/portfolio/portfolio.ts#L17)
+- [`src/app/app.ts:L10`](src/app/app.ts#L10)
 
 ---
 
@@ -89,7 +89,7 @@ That is **Lazy Loading**. The browser downloads the core shell first (`main.js`)
 `loadComponent: () => import('./path').then(m => m.Component)` uses standard JavaScript dynamic imports. Build tools (esbuild/webpack) split dynamic imports into separate `.js` chunk files during build time.
 
 ### Where Used in Our Codebase:
-- [`src/app/app.routes.ts:L5-L12`](file:///home/alpha/Documents/Price-Tracker/src/app/app.routes.ts#L5-L12)
+- [`src/app/app.routes.ts:L5-L12`](src/app/app.routes.ts#L5-L12)
 
 ```typescript
 export const routes: Routes = [
@@ -116,8 +116,8 @@ In an Angular Single Page Application (SPA):
 3. **`RouterLinkActive`**: Automatically attaches CSS classes to the active menu item so the user visually knows which tab they are currently viewing.
 
 ### Where Used in Our Codebase:
-- Import declaration: [`src/app/app.ts:L7`](file:///home/alpha/Documents/Price-Tracker/src/app/app.ts#L7)
-- HTML usage: [`src/app/app.html:L20-L38`](file:///home/alpha/Documents/Price-Tracker/src/app/app.html#L20-L38) & [`src/app/app.html:L50`](file:///home/alpha/Documents/Price-Tracker/src/app/app.html#L50)
+- Import declaration: [`src/app/app.ts:L7`](src/app/app.ts#L7)
+- HTML usage: [`src/app/app.html:L20-L38`](src/app/app.html#L20-L38) & [`src/app/app.html:L50`](src/app/app.html#L50)
 
 ---
 
@@ -129,7 +129,7 @@ Imagine a building with a single water tank on the roof that supplies water to e
 `@Injectable({ providedIn: 'root' })` tells Angular to create **one single instance** of the service across the entire application lifetime. Whether 5 different components request `PriceService`, Angular gives them all the exact same object instance.
 
 ### Where Used in Our Codebase:
-- [`src/app/core/services/price.service.ts:L12`](file:///home/alpha/Documents/Price-Tracker/src/app/core/services/price.service.ts#L12)
+- [`src/app/core/services/price.service.ts:L12`](src/app/core/services/price.service.ts#L12)
 
 ```typescript
 @Injectable({
@@ -148,7 +148,7 @@ Think of an RxJS Observable like a **conveyor belt in a factory**.
 - `map(...)` acts as a worker standing along the conveyor belt who transforms each ping into an updated list of stock prices.
 
 ### Where Used in Our Codebase:
-- [`src/app/core/services/price.service.ts:L55-L58`](file:///home/alpha/Documents/Price-Tracker/src/app/core/services/price.service.ts#L55-L58)
+- [`src/app/core/services/price.service.ts:L55-L58`](src/app/core/services/price.service.ts#L55-L58)
 
 ```typescript
 this.prices$ = interval(1500).pipe(
@@ -170,7 +170,7 @@ With `shareReplay(1)`:
 2. The `(1)` parameter remembers the **latest calculated price array**, so any component that joins late instantly receives the current market prices without waiting for the next tick.
 
 ### Where Used in Our Codebase:
-- [`src/app/core/services/price.service.ts:L57`](file:///home/alpha/Documents/Price-Tracker/src/app/core/services/price.service.ts#L57)
+- [`src/app/core/services/price.service.ts:L57`](src/app/core/services/price.service.ts#L57)
 
 ---
 
@@ -184,8 +184,8 @@ That is **Signals**:
 - `computed(() => ...)`: Creates a derived signal cell (like `gainersCount()`) that recalculates automatically whenever `pricesSignal()` updates.
 
 ### Where Used in Our Codebase:
-- Stream conversion: [`src/app/core/services/price.service.ts:L61`](file:///home/alpha/Documents/Price-Tracker/src/app/core/services/price.service.ts#L61)
-- Derived state: [`src/app/core/services/price.service.ts:L63-L71`](file:///home/alpha/Documents/Price-Tracker/src/app/core/services/price.service.ts#L63-L71)
+- Stream conversion: [`src/app/core/services/price.service.ts:L61`](src/app/core/services/price.service.ts#L61)
+- Derived state: [`src/app/core/services/price.service.ts:L63-L71`](src/app/core/services/price.service.ts#L63-L71)
 
 ---
 
@@ -198,7 +198,7 @@ In Angular 17+, built-in control flow syntax `@for (item of items; track item.id
 - The mandatory `track` expression acts like a **label tag** on each row. When item #2 updates, Angular changes only row #2 in the DOM instead of re-rendering the entire list!
 
 ### Where Used in Our Codebase:
-- [`src/app/features/watchlist/watchlist.ts:L31`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L31)
+- [`src/app/features/watchlist/watchlist.ts:L31`](src/app/features/watchlist/watchlist.ts#L31)
 
 ---
 
@@ -219,7 +219,7 @@ readonly priceService = inject(PriceService);
 It can be assigned directly to class properties, making code cleaner and easier to test.
 
 ### Where Used in Our Codebase:
-- [`src/app/features/watchlist/watchlist.ts:L109`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L109)
+- [`src/app/features/watchlist/watchlist.ts:L109`](src/app/features/watchlist/watchlist.ts#L109)
 
 ---
 
@@ -238,7 +238,7 @@ In Angular 17+, the `@switch` control flow block works just like a native JavaSc
 ```
 
 ### Where Used in Our Codebase:
-- [`src/app/features/watchlist/watchlist.ts:L54-L71`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L54-L71)
+- [`src/app/features/watchlist/watchlist.ts:L54-L71`](src/app/features/watchlist/watchlist.ts#L54-L71)
 
 ---
 
@@ -253,9 +253,9 @@ Instead of manually styling placeholder loader boxes using custom CSS, PrimeNG p
 - Configured globally via `providePrimeNG({ theme: { preset: Aura } })` in `app.config.ts`.
 
 ### Where Used in Our Codebase:
-- Global configuration: [`src/app/app.config.ts:L15-L21`](file:///home/alpha/Documents/Price-Tracker/src/app/app.config.ts#L15-L21)
-- Component import: [`src/app/features/watchlist/watchlist.ts:L3`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L3)
-- Template usage: [`src/app/features/watchlist/watchlist.ts:121-125`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts#L121-L125)
+- Global configuration: [`src/app/app.config.ts:L15-L21`](src/app/app.config.ts#L15-L21)
+- Component import: [`src/app/features/watchlist/watchlist.ts:L3`](src/app/features/watchlist/watchlist.ts#L3)
+- Template usage: [`src/app/features/watchlist/watchlist.ts:121-125`](src/app/features/watchlist/watchlist.ts#L121-L125)
 
 ---
 
@@ -275,9 +275,9 @@ In a traditional multi-page website, visiting `/portfolio` looks for a folder na
 In Angular SPAs, `/portfolio` is a **virtual client-side route**. Nginx must be configured to catch all non-file URLs and deliver `index.html`, allowing Angular's client router to render the correct view without a 404 error!
 
 ### Where Used in Our Codebase:
-- Nginx configuration: [`nginx.conf:L8-L10`](file:///home/alpha/Documents/Price-Tracker/nginx.conf#L8-L10)
-- Multi-stage Dockerfile: [`Dockerfile:L1-L24`](file:///home/alpha/Documents/Price-Tracker/Dockerfile#L1-L24)
-- Docker Compose: [`docker-compose.yml:L1-L9`](file:///home/alpha/Documents/Price-Tracker/docker-compose.yml#L1-L9)
+- Nginx configuration: [`nginx.conf:L8-L10`](nginx.conf#L8-L10)
+- Multi-stage Dockerfile: [`Dockerfile:L1-L24`](Dockerfile#L1-L24)
+- Docker Compose: [`docker-compose.yml:L1-L9`](docker-compose.yml#L1-L9)
 
 ---
 
@@ -304,9 +304,9 @@ ngAfterViewInit(): void {
 ```
 
 ### Where Used in Our Codebase:
-- SSR Guard: [`src/app/features/watchlist/components/stock-chart.ts:L63-L65`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts#L63-L65)
-- Canvas Element Reference: [`src/app/features/watchlist/components/stock-chart.ts:L51`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts#L51)
-- Responsive ResizeObserver: [`src/app/features/watchlist/components/stock-chart.ts:L128-L134`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts#L128-L134)
+- SSR Guard: [`src/app/features/watchlist/components/stock-chart.ts:L63-L65`](src/app/features/watchlist/components/stock-chart.ts#L63-L65)
+- Canvas Element Reference: [`src/app/features/watchlist/components/stock-chart.ts:L51`](src/app/features/watchlist/components/stock-chart.ts#L51)
+- Responsive ResizeObserver: [`src/app/features/watchlist/components/stock-chart.ts:L128-L134`](src/app/features/watchlist/components/stock-chart.ts#L128-L134)
 
 
 

@@ -84,7 +84,7 @@ src/app/
 
 #### File Inventory & Code Walkthrough:
 
-##### A. Routing Table — [`src/app/app.routes.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/app.routes.ts)
+##### A. Routing Table — [`src/app/app.routes.ts`](src/app/app.routes.ts)
 ```typescript
 import { Routes } from '@angular/router';
 
@@ -107,7 +107,7 @@ export const routes: Routes = [
 - **Lines 5–12:** Uses dynamic `import()` to lazy load component bundles on demand.
 - **Line 14:** Wildcard fallback redirects unknown paths back to `/watchlist`.
 
-##### B. Watchlist Feature Component — [`src/app/features/watchlist/watchlist.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts)
+##### B. Watchlist Feature Component — [`src/app/features/watchlist/watchlist.ts`](src/app/features/watchlist/watchlist.ts)
 ```typescript
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 
@@ -133,10 +133,10 @@ export class Watchlist {}
 ```
 - **Line 17:** Sets `changeDetection: ChangeDetectionStrategy.OnPush` to prevent unnecessary component re-checks during global Angular change detection cycles.
 
-##### C. Portfolio Feature Component — [`src/app/features/portfolio/portfolio.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/features/portfolio/portfolio.ts)
+##### C. Portfolio Feature Component — [`src/app/features/portfolio/portfolio.ts`](src/app/features/portfolio/portfolio.ts)
 - Standalone component holding the skeleton container for the user's asset holdings.
 
-##### D. Root Layout & Navigation Header — [`src/app/app.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/app.ts) & [`src/app/app.html`](file:///home/alpha/Documents/Price-Tracker/src/app/app.html)
+##### D. Root Layout & Navigation Header — [`src/app/app.ts`](src/app/app.ts) & [`src/app/app.html`](src/app/app.html)
 ```typescript
 // app.ts
 @Component({
@@ -165,7 +165,7 @@ export class App {
 
 #### File Inventory & Code Walkthrough:
 
-##### A. Asset Domain Interface — [`src/app/core/models/stock.model.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/core/models/stock.model.ts)
+##### A. Asset Domain Interface — [`src/app/core/models/stock.model.ts`](src/app/core/models/stock.model.ts)
 ```typescript
 export interface StockPrice {
   symbol: string;         // Unique symbol ticker (e.g. 'BTC', 'RELIANCE')
@@ -178,7 +178,7 @@ export interface StockPrice {
 }
 ```
 
-##### B. Price Generator Service — [`src/app/core/services/price.service.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/core/services/price.service.ts)
+##### B. Price Generator Service — [`src/app/core/services/price.service.ts`](src/app/core/services/price.service.ts)
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class PriceService {
@@ -217,12 +217,12 @@ export class PriceService {
 #### Objectives Accomplished:
 - Converted RxJS price stream into Angular Signals using `toSignal()`.
 - Created reactive computed state (`gainersCount`, `losersCount`, `totalTracked`) using `computed()`.
-- Connected `Watchlist` UI component ([`src/app/features/watchlist/watchlist.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts)) to render live ticking price cards.
+- Connected `Watchlist` UI component ([`src/app/features/watchlist/watchlist.ts`](src/app/features/watchlist/watchlist.ts)) to render live ticking price cards.
 - Used Angular 19 Control Flow (`@for ... track stock.symbol`) with `OnPush` change detection for max performance.
 
 #### File Inventory & Code Walkthrough:
 
-##### A. Watchlist UI Component — [`src/app/features/watchlist/watchlist.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/watchlist.ts)
+##### A. Watchlist UI Component — [`src/app/features/watchlist/watchlist.ts`](src/app/features/watchlist/watchlist.ts)
 ```typescript
 @Component({
   selector: 'app-watchlist',
@@ -261,7 +261,7 @@ export class Watchlist {
 #### Objectives Accomplished:
 - Installed official TradingView `lightweight-charts` library.
 - Enhanced `PriceService` with historical data series memory (rolling window of 50 data points).
-- Built standalone `StockChart` component ([`src/app/features/watchlist/components/stock-chart.ts`](file:///home/alpha/Documents/Price-Tracker/src/app/features/watchlist/components/stock-chart.ts)) using HTML5 Canvas AreaSeries.
+- Built standalone `StockChart` component ([`src/app/features/watchlist/components/stock-chart.ts`](src/app/features/watchlist/components/stock-chart.ts)) using HTML5 Canvas AreaSeries.
 - Handled Angular SSR safely using `isPlatformBrowser(platformId)` to prevent server-side DOM errors.
 - Synchronized time formatting between the card's `DatePipe` and the chart's `timeScale.tickMarkFormatter` and `localization.timeFormatter` to match the user's local timezone (IST) down to the exact second.
 - Connected user selection so clicking any card updates `selectedSymbol` signal and instantly streams live price ticks to the chart.
@@ -293,12 +293,12 @@ export class Watchlist {
 To ensure the application runs on any computer without dependency conflicts or manual environment setup, the project includes a production-grade **Multi-Stage Docker configuration**:
 
 ### Files Inventory:
-- [`.dockerignore`](file:///home/alpha/Documents/Price-Tracker/.dockerignore): Prevents uploading host `node_modules/`, `.angular/` cache, and git history into the build context.
-- [`nginx.conf`](file:///home/alpha/Documents/Price-Tracker/nginx.conf): Custom Nginx web server config configured with SPA fallback (`try_files $uri $uri/ /index.html;`), gzip compression, and static asset caching.
-- [`Dockerfile`](file:///home/alpha/Documents/Price-Tracker/Dockerfile): Multi-stage container file:
+- [`.dockerignore`](.dockerignore): Prevents uploading host `node_modules/`, `.angular/` cache, and git history into the build context.
+- [`nginx.conf`](nginx.conf): Custom Nginx web server config configured with SPA fallback (`try_files $uri $uri/ /index.html;`), gzip compression, and static asset caching.
+- [`Dockerfile`](Dockerfile): Multi-stage container file:
   - **Stage 1 (Builder):** Uses `node:22-alpine` to install dependencies and run `npm run build -- --configuration production`.
   - **Stage 2 (Runtime):** Uses lightweight `nginx:alpine` (~25MB total image) to serve compiled static files on port 80.
-- [`docker-compose.yml`](file:///home/alpha/Documents/Price-Tracker/docker-compose.yml): Maps port `4200:80` for single-command startup.
+- [`docker-compose.yml`](docker-compose.yml): Maps port `4200:80` for single-command startup.
 
 ### How to Run on Any Computer:
 ```bash
@@ -390,3 +390,31 @@ When user clicks "Add" in the dropdown: blur fires → dropdown closes → click
 | Already-tracked symbols | Show with "✓ Tracking" badge | Better UX than hiding |
 | Search scope | Ticker + full name, case-insensitive | Type "bitcoin" → find BTC, "tata" → find TCS |
 | `isCrypto()` location | PriceService | Reusable, single source of truth |
+
+---
+
+## 7. Code Review (2026-10-17) & Tech-Debt Backlog
+
+Review of everything built through Step 6. Verified facts: `ng build` **passes** (warns: initial bundle 555 kB > 500 kB budget); `ng test` **fails 2/2** (stale `app.spec.ts`).
+Each item gets fixed only when we reach it in the step-by-step revision and you approve the change.
+
+| # | Severity | Where | Problem | Why it matters |
+|---|---|---|---|---|
+| 1 | Bug | [price.service.ts:L223](src/app/core/services/price.service.ts#L223) | `toFixed(2)` on every tick | DOGE (0.175), ADA (0.62), MATIC (0.78) get rounded to 2 decimals: a 0.5% move is smaller than 0.01, so price freezes or jumps ~5% |
+| 2 | Bug | [price.service.ts:L221](src/app/core/services/price.service.ts#L221) | `(Math.random() - 0.44) * 0.01` = −0.44%…+0.56%, mean +0.06%/tick | Compounds to roughly 4× per hour. Comment on L211/L220 is also wrong |
+| 3 | Bug | [stock-chart.ts:L168](src/app/features/watchlist/components/stock-chart.ts#L168) vs [price.service.ts:L247](src/app/core/services/price.service.ts#L247) | Chart computes its own timestamp; service may bump time to `last+1` | Two sources of truth for time. After a symbol switch the chart can receive a time older than its last point and lightweight-charts throws |
+| 4 | Design | [watchlist.ts:L315](src/app/features/watchlist/watchlist.ts#L315), [L358](src/app/features/watchlist/watchlist.ts#L358) | `getOrCreateAlertForm()` called from the template; it calls `setValidators` + `updateValueAndValidity` | Side effects inside change detection, re-run every tick |
+| 5 | Logic | [watchlist.ts:L30-L38](src/app/features/watchlist/watchlist.ts#L30-L38) | Validator only blocks `target === current` (exact float equality on a moving price) | The real "fires instantly" case, e.g. "above 100" when price is already 120, is not blocked |
+| 6 | Types | [watchlist.ts:L448](src/app/features/watchlist/watchlist.ts#L448), [L495](src/app/features/watchlist/watchlist.ts#L495) | Untyped `FormGroup` makes `form.value` `any` | `direction` could be `null` and TS won't catch it |
+| 7 | UI bug | [app.html:L62](src/app/app.html#L62), [L108](src/app/app.html#L108) | `animate-in…`, `animate-[shrink_…]` | No animate plugin installed, no `@keyframes shrink` defined, so toast animations do nothing |
+| 8 | Tests | [app.spec.ts](src/app/app.spec.ts) | Missing `provideRouter`; expects "Hello, price-tracker" | 0 working tests |
+| 9 | Perf | [watchlist.ts:L244-L256](src/app/features/watchlist/watchlist.ts#L244-L256), [L267](src/app/features/watchlist/watchlist.ts#L267) | `alertCountForSymbol()` ×6 and `isCrypto()` (linear search) per card per tick | O(cards × universe) work every 1.5 s; matters in Step 7 (200 symbols) |
+| 10 | Reactivity | [price.service.ts:L66](src/app/core/services/price.service.ts#L66), [L144](src/app/core/services/price.service.ts#L144) | `trackedAssets` / `currentPricesMap` are plain (non-signal) state read by templates | In a zoneless app the template only updates by coincidence; new card shows up to 1.5 s late |
+| 11 | Arch | [app.ts:L16](src/app/app.ts#L16) | Root `App` injects `AlertService` → `PriceService` | Price feed + 25-symbol universe live in the main bundle and tick on `/portfolio` too. Acceptable (alerts are global), but a conscious trade-off |
+| 12 | Arch | [angular.json:L31-L38](angular.json#L31-L38) vs [Dockerfile:L23](Dockerfile#L23) | SSR/Express configured, but prod serves only static files via nginx | `server.ts` is dead code in prod. Decide: `outputMode: "static"` or deploy Node SSR |
+| 13 | Bundle | build output | Initial 555 kB > 500 kB budget | Likely PrimeNG + Aura theme in main bundle, used only for `<p-skeleton>` (not yet measured) |
+| 14 | DevOps | [nginx.conf:L13-L21](nginx.conf#L13-L21) | `add_header` inside a `location` drops server-level headers | Security headers missing on JS/CSS; `X-XSS-Protection` is obsolete |
+| 15 | DevOps | [Dockerfile:L8](Dockerfile#L8) | `npm ci … \|\| npm install …` | Silently hides lockfile drift; builds stop being reproducible |
+| 16 | Style | [stock-chart.ts:L52-L53](src/app/features/watchlist/components/stock-chart.ts#L52-L53), L77/L149/L170 | Decorator `@Input`/`@ViewChild` + `as any` while the rest uses signals | Inconsistent; `as any` hides the `UTCTimestamp` type |
+| 17 | Structure | [watchlist.ts](src/app/features/watchlist/watchlist.ts) | 551 lines, inline template, page + search + card + alert form in one component | Hard to read, test, and optimise; split into `search-box`, `stock-card`, `alert-form` |
+| 18 | Minor | [alert.service.ts:L69](src/app/core/services/alert.service.ts#L69) | ID = `symbol-Date.now()` | Two alerts in the same ms collide; prefer `crypto.randomUUID()` |
