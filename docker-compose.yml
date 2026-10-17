@@ -1,9 +1,51 @@
 services:
+  # Pub-sub bus + latest-price cache. Port exposed only for local debugging (redis-cli).
+  redis:
+    image: redis:7-alpine
+    container_name: price_tracker_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # FastAPI: auth REST API + /api/ws/prices WebSocket + Binance/simulated feeds.
+  backend:
+    build: ./backend
+    container_name: price_tracker_backend
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: sqlite:////app/data/app.db
+      # Values come from .env in the repo root (template: .env.example). ":?" = refuse to start without it.
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (copy .env.example)}
+      ACCESS_TOKEN_SECONDS: ${ACCESS_TOKEN_SECONDS:-900}
+      REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-7}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ENABLE_BINANCE: ${ENABLE_BINANCE:-true}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    volumes:
+      - backend-data:/app/data
+    ports:
+      - "8000:8000" # used by `npm start` (dev proxy); nginx reaches it on the internal network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Angular build served by nginx, which also proxies /api (incl. WebSocket) to the backend.
   price-tracker:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: price_tracker_app
     ports:
       - "4200:80"
+    depends_on:
+      - backend
     restart: unless-stopped
+
+volumes:
+  backend-data:

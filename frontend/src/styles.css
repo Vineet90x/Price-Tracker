@@ -1,0 +1,74 @@
+@import 'tailwindcss';
+
+/*
+  Design tokens. @theme does two things in Tailwind v4:
+  1. generates utilities: --color-up  → text-up, bg-up, border-up …
+  2. exposes each one as a CSS variable on :root, so plain JS (the chart) can read it too.
+  `static` = emit every variable even if no class uses it; without it Tailwind drops unused
+  variables and the chart's getComputedStyle() lookup could come back empty.
+*/
+@theme static {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Surfaces: darkest (page) → lighter (raised) */
+  --color-surface-0: #0b0e11; /* page background */
+  --color-surface-1: #12161c; /* panels */
+  --color-surface-2: #1a1f27; /* hover, inputs */
+  --color-line: #232a34; /* borders, dividers */
+
+  /* Text */
+  --color-ink: #e6e8eb; /* primary */
+  --color-ink-muted: #8b93a1; /* labels */
+  --color-ink-faint: #5b6472; /* hints */
+
+  /* Meaning-carrying colours: the only saturated colours in the UI */
+  --color-up: #16c784;
+  --color-down: #ea3943;
+  --color-accent: #3b82f6; /* selection, focus, primary button */
+  --color-warn: #f0b90b; /* alerts */
+
+  --animate-flash-up: flash-up 700ms ease-out;
+  --animate-flash-down: flash-down 700ms ease-out;
+  --animate-toast-in: toast-in 200ms ease-out;
+  --animate-shrink: shrink 5s linear forwards;
+
+  @keyframes flash-up {
+    from {
+      background-color: color-mix(in srgb, var(--color-up) 22%, transparent);
+    }
+    to {
+      background-color: transparent;
+    }
+  }
+  @keyframes flash-down {
+    from {
+      background-color: color-mix(in srgb, var(--color-down) 22%, transparent);
+    }
+    to {
+      background-color: transparent;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes shrink {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0%;
+    }
+  }
+}
+
+body {
+  @apply bg-surface-0 text-ink font-sans antialiased;
+}

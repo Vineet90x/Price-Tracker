@@ -1,0 +1,100 @@
+<div class="h-dvh flex flex-col">
+  <header class="h-12 shrink-0 border-b border-line bg-surface-1">
+    <div class="h-full px-3 sm:px-4 flex items-center gap-3 sm:gap-6">
+      <!-- Brand -->
+      <a routerLink="/watchlist" aria-label="PriceTracker home" class="flex items-center gap-2 text-sm font-semibold tracking-tight">
+        <span class="grid place-items-center h-6 w-6 rounded bg-accent text-white">
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </span>
+        <span class="hidden sm:inline">PriceTracker</span>
+      </a>
+
+      <!-- Nav tabs: active tab gets aria-current="page", styled with the aria-[…] variant -->
+      <nav class="flex h-full items-stretch">
+        <a routerLink="/watchlist" routerLinkActive ariaCurrentWhenActive="page"
+           class="flex items-center px-2 sm:px-3 text-sm font-medium text-ink-muted border-b-2 border-transparent transition-colors hover:text-ink aria-[current=page]:text-ink aria-[current=page]:border-accent">
+          Watchlist
+        </a>
+        <a routerLink="/portfolio" routerLinkActive ariaCurrentWhenActive="page"
+           class="flex items-center px-2 sm:px-3 text-sm font-medium text-ink-muted border-b-2 border-transparent transition-colors hover:text-ink aria-[current=page]:text-ink aria-[current=page]:border-accent">
+          Portfolio
+        </a>
+      </nav>
+
+      <div class="ml-auto flex items-center gap-3 sm:gap-4">
+        <!-- Feed status: driven by the WebSocket connection state (PriceFeed.status) -->
+        <div class="flex items-center gap-2 text-xs font-medium text-ink-muted" role="status" [attr.title]="feedLabel()">
+          <span class="relative flex h-2 w-2">
+            @if (feedStatus() === 'live' || feedStatus() === 'simulated') {
+              <span class="absolute inline-flex h-full w-full rounded-full opacity-60 motion-safe:animate-ping" [class]="feedDotClass()"></span>
+            }
+            <span class="relative inline-flex h-2 w-2 rounded-full" [class]="feedDotClass()"></span>
+          </span>
+          <span class="hidden sm:inline">{{ feedLabel() }}</span>
+        </div>
+
+        <!-- Auth -->
+        @if (auth.user(); as user) {
+          <span class="hidden sm:inline text-xs text-ink-muted truncate max-w-48">{{ user.email }}</span>
+          <button type="button" (click)="auth.logout()" class="text-xs font-medium text-ink-muted hover:text-ink transition-colors">
+            Log out
+          </button>
+        } @else {
+          <a routerLink="/login" class="h-7 px-3 grid place-items-center rounded bg-accent text-white text-xs font-semibold hover:brightness-110 transition">
+            Log in
+          </a>
+        }
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 min-h-0 overflow-auto">
+    <router-outlet />
+  </main>
+
+  <!--
+    Toast outlet (Step 6 — Price Alerts). Lives in the root layout so toasts show on every route.
+    Bottom-right: never covers the header or the alerts pane. aria-live: screen readers announce new alerts.
+  -->
+  <div class="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 w-80 max-w-[calc(100vw-2rem)] pointer-events-none" role="status" aria-live="polite">
+    @for (toast of alertService.toasts(); track toast.id) {
+      <div class="pointer-events-auto overflow-hidden rounded border border-line border-l-2 border-l-warn bg-surface-1 shadow-xl shadow-black/50 motion-safe:animate-toast-in">
+        <div class="p-3 flex items-start gap-3">
+          <svg class="w-4 h-4 mt-0.5 shrink-0 text-warn" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold">
+              {{ toast.symbol }}
+              <span [class]="toast.direction === 'above' ? 'text-up' : 'text-down'">
+                {{ toast.direction === 'above' ? '▲ above' : '▼ below' }}
+              </span>
+              <span class="font-mono tabular-nums">{{ toast.targetPrice | number: '1.2-4' }}</span>
+            </p>
+            <p class="mt-0.5 text-xs text-ink-muted font-mono tabular-nums">
+              Hit {{ toast.triggeredAtPrice | number: '1.2-4' }} · {{ toast.triggeredAt | date: 'HH:mm:ss' }}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            (click)="alertService.dismissToast(toast.id)"
+            aria-label="Dismiss alert"
+            class="shrink-0 text-ink-faint hover:text-ink transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Progress bar: shrinks over the 5 s auto-dismiss window (AlertService.AUTO_DISMISS_MS) -->
+        <div class="h-0.5 bg-surface-2">
+          <div class="h-full bg-warn/60 animate-shrink"></div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
