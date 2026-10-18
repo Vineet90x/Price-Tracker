@@ -206,7 +206,7 @@ functions that return errors or `null`. Typed forms make `form.value` properly t
 - Alert form [alert-panel.ts:L140-L147](../../frontend/src/app/features/watchlist/components/alert-panel.ts#L140-L147) with a
   custom validator that reads the *live* price through a getter
   [alert-panel.ts:L29-L35](../../frontend/src/app/features/watchlist/components/alert-panel.ts#L29-L35).
-- Login form [login.ts:L144-L150](../../frontend/src/app/features/auth/login.ts#L144-L150).
+- Login form [login.ts:L145-L151](../../frontend/src/app/features/auth/login.ts#L145-L151).
 - The search box is a single `FormControl` whose `valueChanges` stream feeds RxJS (2.5).
 
 **Why we chose it.** Validation logic is plain, testable TypeScript; forms combine naturally with streams.

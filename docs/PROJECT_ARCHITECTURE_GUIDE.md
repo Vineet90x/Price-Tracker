@@ -793,7 +793,7 @@ Everything after "we know who you are" is shared with password login ([auth.py:L
 
 ### Frontend
 - [google-identity.service.ts:L37](../frontend/src/app/core/auth/google-identity.service.ts#L37): loads Google's script **lazily** (only when the login page is shown, once), renders the button, `disableAutoSelect()` on logout. Hand-written minimal types instead of an `@types` package.
-- [login.ts:L155-L168](../frontend/src/app/features/auth/login.ts#L155-L168): draws the button after the DOM exists (see ANGULAR_FRAMEWORK_GUIDE §32). Google and email login share `finish()` ([login.ts:L186](../frontend/src/app/features/auth/login.ts#L186)).
+- [login.ts:L156-L169](../frontend/src/app/features/auth/login.ts#L156-L169): draws the button after the DOM exists (see ANGULAR_FRAMEWORK_GUIDE §32). Google and email login share `finish()` ([login.ts:L187](../frontend/src/app/features/auth/login.ts#L187)).
 - [auth.service.ts:L65](../frontend/src/app/core/auth/auth.service.ts#L65).
 
 ### Verification

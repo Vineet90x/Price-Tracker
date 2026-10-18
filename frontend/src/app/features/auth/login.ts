@@ -58,7 +58,8 @@ function describeError(error: unknown): string {
 
         <!-- Google button: shown only when the backend has a client ID configured -->
         @if (googleClientId()) {
-          <div #googleButton class="mt-5 flex justify-center min-h-10"></div>
+          <!-- color-scheme: light → browser doesn't paint a white backdrop behind Google's (light) iframe -->
+          <div #googleButton class="mt-5 flex justify-center min-h-10 [color-scheme:light]"></div>
           <div class="mt-5 flex items-center gap-3 text-[11px] uppercase tracking-wider text-ink-faint">
             <span class="h-px flex-1 bg-line"></span>
             or with email

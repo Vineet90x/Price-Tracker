@@ -643,7 +643,7 @@ A guard is a **doorman** for a route. `authGuard` lets you into `/portfolio` onl
 - [`src/app/core/auth/auth.guards.ts:L15-L18`](../frontend/src/app/core/auth/auth.guards.ts#L15-L18): the reverse, for `/login`.
 - Wired in [`src/app/app.routes.ts:L13`](../frontend/src/app/app.routes.ts#L13).
 - **The reload problem:** after a page reload the access token (memory) is gone, so the guard would say "not logged in". [`src/app/app.config.ts:L34-L37`](../frontend/src/app/app.config.ts#L34-L37) runs `restoreSession()` **before** the first navigation and Angular waits for its Promise. By the time the guard runs, the cookie has been traded for a fresh access token.
-- `returnUrl` is only followed if it starts with `/` and not `//` ([`src/app/features/auth/login.ts:L193`](../frontend/src/app/features/auth/login.ts#L193)), otherwise `?returnUrl=//evil.com` would be an **open redirect**.
+- `returnUrl` is only followed if it starts with `/` and not `//` ([`src/app/features/auth/login.ts:L194`](../frontend/src/app/features/auth/login.ts#L194)), otherwise `?returnUrl=//evil.com` would be an **open redirect**.
 
 ### Common Mistakes
 - Treating guards as security. They're UX: the real protection is the backend returning 401 without a valid token.
@@ -747,7 +747,7 @@ Google's button is drawn by **Google's** JavaScript into a `<div>` we provide. T
 `afterRenderEffect(fn)` is an effect that runs **after** Angular has updated the DOM. Like `effect`, it tracks the signals it reads and re-runs when they change.
 
 ### Where Used
-[login.ts:L155-L168](../frontend/src/app/features/auth/login.ts#L155-L168):
+[login.ts:L156-L169](../frontend/src/app/features/auth/login.ts#L156-L169):
 - Reads `googleClientId()` (from `httpResource`) and `googleButton()` (a signal `viewChild`, which becomes defined once the `@if` renders the div).
 - `googleButtonHost` remembers which element was already drawn into, so later re-runs don't draw a second button.
 

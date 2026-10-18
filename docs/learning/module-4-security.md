@@ -123,7 +123,7 @@ don't log each other out. That race is exactly why we skipped it for now.
 |---|---|---|
 | **XSS** | Runs their JavaScript inside our page | Angular escapes `{{ }}` output by default; refresh cookie `HttpOnly`; access token only in memory, 15 min |
 | **CSRF** | Makes your browser send a request with your cookies from their site | `SameSite=Strict` [auth.py:L66-L75](../../backend/app/routers/auth.py#L66-L75) |
-| **Open redirect** | `…/login?returnUrl=https://evil.com`, so after login you land on a fake site | Only same-app paths allowed [login.ts:L193](../../frontend/src/app/features/auth/login.ts#L193) |
+| **Open redirect** | `…/login?returnUrl=https://evil.com`, so after login you land on a fake site | Only same-app paths allowed [login.ts:L194](../../frontend/src/app/features/auth/login.ts#L194) |
 | **SQL injection** | Puts SQL into input fields | Parameterised queries via SQLAlchemy (3.5) |
 | **Credential stuffing** | Tries leaked email/password lists | Slow hashing today; rate limiting is missing (Backlog #25) |
 | **Token theft from the DB** | Steals the database file | Passwords Argon2-hashed, refresh tokens SHA-256-hashed |
