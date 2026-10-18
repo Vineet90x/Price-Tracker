@@ -91,8 +91,8 @@ shown only at reception to get a new day pass).
 
 **How it works.**
 - **Access token**: JWT, 15 minutes, held **only in memory** in the browser [auth.service.ts:L42](../../frontend/src/app/core/auth/auth.service.ts#L42).
-- **Refresh token**: 256 random bits, *not* a JWT [security.py:L77-L79](../../backend/app/security.py#L77-L79), in an
-  httpOnly cookie for 7 days. The database stores only its **SHA-256 hash** [security.py:L82-L84](../../backend/app/security.py#L82-L84).
+- **Refresh token**: 256 random bits, *not* a JWT [security.py:L78-L80](../../backend/app/security.py#L78-L80), in an
+  httpOnly cookie for 7 days. The database stores only its **SHA-256 hash** [security.py:L83-L85](../../backend/app/security.py#L83-L85).
   SHA-256 is fine *here* (unlike passwords) because the token is random and long, so it can't be guessed.
 - **Sessions table:** one row per login. A new login revokes the user's other sessions
   [auth.py:L110-L115](../../backend/app/routers/auth.py#L110-L115); logout revokes the current one.
@@ -149,7 +149,7 @@ user X, email Y, verified by Google". Login with Google uses OIDC.
 1. Google's button (their script, their iframe) asks you to choose an account in a Google popup.
 2. Google gives our page an **ID token**: a JWT signed by Google with RS256, containing `iss` (Google), `aud`
    (**our** client ID), `sub` (your permanent Google user id), `email`, `email_verified`, `exp`.
-3. The page sends it to `POST /api/auth/google`. The backend verifies [security.py:L56-L74](../../backend/app/security.py#L56-L74):
+3. The page sends it to `POST /api/auth/google`. The backend verifies [security.py:L56-L75](../../backend/app/security.py#L56-L75):
    the signature uses one of Google's current public keys (downloaded from Google and cached); `aud` must be our
    client ID, so a token Google issued to *another* website is useless here; `iss` must be Google; it must not be expired.
 4. Find the user by `sub`, else link by verified email, else create one [auth.py:L138-L168](../../backend/app/routers/auth.py#L138-L168).

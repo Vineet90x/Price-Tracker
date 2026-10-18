@@ -67,6 +67,7 @@ def verify_google_id_token(token: str) -> dict:
         signing_key.key,
         algorithms=["RS256"],
         audience=settings.google_client_id,
+        leeway=120,  # tolerate 2 min clock difference with Google (Docker VM clocks drift after sleep)
         options={"require": ["exp", "iss", "aud", "sub", "email"]},
     )
     if claims["iss"] not in GOOGLE_ISSUERS:
