@@ -155,7 +155,7 @@ Three pillars: **logs** (what happened), **metrics** (numbers over time), **trac
 **How it works in our project.**
 - **Logs:** the feeds log failures and reconnects [feeds.py:L32](../../backend/app/realtime/feeds.py#L32). That's how we
   saw the DNS failures and the 30 s backoff today: `docker compose logs -f backend`.
-- **Health/metrics endpoint:** `/api/health` [main.py:L54](../../backend/app/main.py#L54) returns whether Redis responds
+- **Health/metrics endpoint:** `/api/health` [main.py:L58](../../backend/app/main.py#L58) returns whether Redis responds
   plus counters (`binance_connections`, `binance_messages`, `published`, `ws_clients`, `ws_messages_sent`).
 - **Container health:** compose's Redis healthcheck (6.2).
 

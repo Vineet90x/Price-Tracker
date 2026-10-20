@@ -39,3 +39,19 @@ class AuthSession(Base):
 
     def is_valid(self) -> bool:
         return self.revoked_at is None and self.expires_at > utcnow()
+
+
+class PriceAlert(Base):
+    """A user's price alert. Lives on the server, so it fires even when no browser tab is open."""
+
+    __tablename__ = "alerts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    symbol: Mapped[str] = mapped_column(String(20), index=True)
+    direction: Mapped[str] = mapped_column(String(5))  # "above" | "below"
+    target_price: Mapped[float]
+    status: Mapped[str] = mapped_column(String(10), default="active", index=True)  # active | triggered | cancelled
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    triggered_at: Mapped[Optional[datetime]] = mapped_column(default=None)
+    triggered_price: Mapped[Optional[float]] = mapped_column(default=None)

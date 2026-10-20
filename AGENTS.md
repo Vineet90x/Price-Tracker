@@ -127,7 +127,13 @@ docker compose up --build -d   # full stack: nginx :4200 → FastAPI :8000 → R
 docker compose logs -f backend # backend logs (Binance connection, feed restarts)
 curl localhost:4200/api/health # fan-out counters (binance_connections should stay 1)
 py -3.12 tools/check_doc_links.py  # verify every doc link after code changes
+
+# backend checks (backend running, from backend/ with the venv): what CI runs too
+python tests/e2e_alerts.py
+python ../tools/loadtest/ws_load.py slow --fast 20 --slow 2 --rate 50 --seconds 10 --max-p95 500
 ```
+CI (`.github/workflows/ci.yml`) runs frontend tests+build, backend e2e + load-test budget, doc links and Docker builds on
+every push; keep it green.
 
 ## 8. Current progress (update this when a step completes)
 
@@ -138,6 +144,9 @@ py -3.12 tools/check_doc_links.py  # verify every doc link after code changes
 - Phase 1.5 (FastAPI auth) and Phase 2 (WebSocket + Binance + Redis fan-out): built and verified (2026-10-17),
   at the owner's request in one go. The owner has NOT yet revised these step by step; walk through them
   with the same teaching workflow before changing them further.
+- Module 8 features (2026-10-20, owner asked for them in one go): server-side alerts (§17), latency tracing (§18),
+  load test + per-client outbox fix (§19), CI pipeline (§20). Lessons: `docs/learning/module-8-real-world-features.md`.
+  Open decision for the owner: the 250 ms UI batching costs ~250 ms of latency (§18).
 - Known issues are tracked in the "Tech-Debt Backlog" section of `docs/PROJECT_ARCHITECTURE_GUIDE.md`.
 
 ## 9. Never

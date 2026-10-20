@@ -58,7 +58,7 @@ components share, a service with signals (2.2/2.4). See guide §1, §9, §11, §
 - You can ask for an **abstraction** and let configuration decide the concrete class:
   `PriceFeed` → WebSocket / simulated / no-op [price-feed.provider.ts:L15-L21](../../frontend/src/app/core/services/price-feed.provider.ts#L15-L21).
 - Tests replace real dependencies with fakes in one line:
-  [price.service.spec.ts:L29](../../frontend/src/app/core/services/price.service.spec.ts#L29).
+  [price.service.spec.ts:L30](../../frontend/src/app/core/services/price.service.spec.ts#L30).
 
 **Why we chose it.** It's Angular's core mechanism, and it's what made Phase 2 cheap: swapping fake prices for a
 live WebSocket changed **zero components**.
@@ -203,9 +203,9 @@ check permissions itself (it does: 401 without a valid token).
 functions that return errors or `null`. Typed forms make `form.value` properly typed.
 
 **Example from our code.**
-- Alert form [alert-panel.ts:L140-L147](../../frontend/src/app/features/watchlist/components/alert-panel.ts#L140-L147) with a
-  custom validator that reads the *live* price through a getter
-  [alert-panel.ts:L29-L35](../../frontend/src/app/features/watchlist/components/alert-panel.ts#L29-L35).
+- Alert form [alert-panel.ts:L197-L207](../../frontend/src/app/features/watchlist/components/alert-panel.ts#L197-L207) with a
+  custom validator that reads the *live* price and the chosen direction through getters
+  [alert-panel.ts:L34-L42](../../frontend/src/app/features/watchlist/components/alert-panel.ts#L34-L42).
 - Login form [login.ts:L145-L151](../../frontend/src/app/features/auth/login.ts#L145-L151).
 - The search box is a single `FormControl` whose `valueChanges` stream feeds RxJS (2.5).
 

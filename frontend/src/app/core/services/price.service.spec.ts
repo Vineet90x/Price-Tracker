@@ -9,10 +9,12 @@ class FakeFeed extends PriceFeed {
   readonly events = new Subject<FeedEvent>();
   readonly events$ = this.events.asObservable();
   readonly status = signal<FeedStatus>('live').asReadonly();
+  readonly clockSync = signal(null).asReadonly();
   readonly subscribed: string[] = [];
   subscribe(symbols: readonly string[]): void {
     this.subscribed.push(...symbols);
   }
+  setAuthToken(): void {}
 }
 
 const tick = (symbol: string, price: number, ts: number): FeedEvent => ({

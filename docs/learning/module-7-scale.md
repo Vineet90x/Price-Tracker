@@ -59,10 +59,10 @@ Users ──DNS──► Load balancer (TLS, WebSocket-aware, least-connections)
 
 | # | Breaks at… | Symptom | Fix |
 |---|---|---|---|
-| 1 | A few thousand users (measure!) | One Python process: CPU for JSON + sending, memory per socket | More WebSocket instances behind a least-connections load balancer |
+| 1 | **~1,000 users per process (measured, 8.3)**; connection bursts > ~100/s get refused | One Python process: CPU for JSON, snapshots and sending; ~180 KB per client | More WebSocket instances behind a least-connections load balancer |
 | 2 | The 2nd instance | Duplicate Binance sockets and simulated ticks (Backlog #20) | Separate **ingest worker**, leader election or a single replica with a standby |
 | 3 | The 2nd API instance | SQLite on one disk (Backlog #22) | **Postgres** + Alembic migrations; Redis cache for the per-request session check |
-| 4 | Slow mobile clients | One slow client delays others (Backlog #21) | Per-client bounded queues, per-symbol conflation, evict laggards (5.4) |
+| 4 | Slow mobile clients | ~~One slow client delays others~~ **fixed and measured (8.3)** | Per-client outbox, per-symbol conflation, evict laggards |
 | 5 | ~100k users | **Bandwidth** becomes the main cost (7.4) | Batch per client, binary encoding, compression, only symbols in view |
 | 6 | Deploys / outages | 1M clients reconnect at once (thundering herd) | Jittered backoff (have it), connection draining, server-sent retry hints, resume from last sequence number |
 | 7 | Login peaks | Argon2 is deliberately CPU-heavy (64 MB per hash) | Rate limits, separate auth service sized for peaks, passkeys/social login |
@@ -70,7 +70,9 @@ Users ──DNS──► Load balancer (TLS, WebSocket-aware, least-connections)
 | 9 | Global users | 200 ms+ round trips from far away | Edge/regional WebSocket clusters, each fed by the central ingest (or a regional Redis replica) |
 
 ### Rough capacity maths
-- **Connections:** 1,000,000 ÷ ~20,000 per instance ≈ **50 WebSocket instances**. Memory: if each idle connection
+- **Connections:** 1,000,000 ÷ ~20,000 per instance ≈ **50 WebSocket instances**. ⚠ **Correction from the load test (8.3):**
+  one Python process on a Windows laptop handled ~1,000 clients at p95 < 400 ms. Assume that until a Linux server with
+  several worker processes is measured; it could mean ~1,000 instances, or (better) fewer, more efficient ones. **Measure, don't assume.** Memory: if each idle connection
   costs ~40 KB in Python (estimate), 1M connections ≈ 40 GB of RAM across the fleet.
 - **Redis:** ~25 ticks/s published × 50 subscribed instances ≈ 1,250 deliveries/s: trivial for Redis.
 - **Fan-out at the edge:** 5,000,000 messages/s leave the WebSocket tier. *This* is the real workload, and why

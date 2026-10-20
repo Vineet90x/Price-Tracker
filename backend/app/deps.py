@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from .db import get_db
+from .db import SessionLocal, get_db
 from .models import AuthSession, User
 from .security import decode_access_token
 
@@ -42,3 +42,17 @@ def get_current_user(
     if user is None:
         raise _unauthorized("invalid_token")
     return user
+
+
+def user_id_from_token(token: str) -> int | None:
+    """Same checks as get_current_user, for the WebSocket (which has no request headers we use).
+    Returns the user id, or None if the token is invalid, expired or its session was revoked."""
+    try:
+        payload = decode_access_token(token)
+    except jwt.InvalidTokenError:
+        return None
+    with SessionLocal() as db:
+        session = db.get(AuthSession, payload["sid"])
+        if session is None or not session.is_valid() or str(session.user_id) != payload["sub"]:
+            return None
+        return session.user_id

@@ -22,8 +22,8 @@ Binance ──1 socket──► backend feed ──PUBLISH──► Redis ──
 | **SSE** (Server-Sent Events) | A radio: the server talks, you listen | one long HTTP response that streams events; reconnects automatically | Server → client only (notifications, feeds) |
 | **WebSocket** | A phone call: both talk any time | HTTP upgrades (`101 Switching Protocols`) to a two-way message channel | Two-way, low latency (chat, games, trading) |
 
-**How it works in our project.** The browser opens one WebSocket [websocket-price-feed.ts:L33](../../frontend/src/app/core/services/websocket-price-feed.ts#L33)
-to [ws.py:L26](../../backend/app/routers/ws.py#L26) and speaks a tiny JSON protocol: the client
+**How it works in our project.** The browser opens one WebSocket [websocket-price-feed.ts:L62](../../frontend/src/app/core/services/websocket-price-feed.ts#L62)
+to [ws.py:L37](../../backend/app/routers/ws.py#L37) and speaks a tiny JSON protocol: the client
 sends `subscribe`/`unsubscribe`, the server sends `snapshot`/`tick`. nginx must pass the upgrade headers through
 [nginx.conf:L28-L29](../../frontend/nginx.conf#L28-L29).
 
@@ -54,13 +54,13 @@ real-time client must notice, reconnect, and restore its state, without hammerin
   abnormal (no close frame, e.g. network died), `1011` server error, `1012` service restart.
 - **Heartbeats:** idle TCP connections can die silently (a router forgets them). Ping/pong frames every ~20 s
   detect that; our Binance client pings with `ping_interval=20` [feeds.py:L46](../../backend/app/realtime/feeds.py#L46).
-- **Exponential backoff + jitter** [websocket-price-feed.ts:L11-L14](../../frontend/src/app/core/services/websocket-price-feed.ts#L11-L14): wait
+- **Exponential backoff + jitter** [websocket-price-feed.ts:L33-L36](../../frontend/src/app/core/services/websocket-price-feed.ts#L33-L36): wait
   1 s, 2 s, 4 s … max 30 s, plus random 0–20 %. Without jitter, every client dropped by the same server restart
   would reconnect in the **same millisecond** (a *thundering herd*) and could knock the server over again.
 - **Clean close vs error:** the browser stream *completes* on a clean close; we convert that to an error so a single
-  `retry` handles both [websocket-price-feed.ts:L46](../../frontend/src/app/core/services/websocket-price-feed.ts#L46).
+  `retry` handles both [websocket-price-feed.ts:L83](../../frontend/src/app/core/services/websocket-price-feed.ts#L83).
 - **Restore state:** a new socket knows nothing, so on open we re-send every wanted symbol
-  [websocket-price-feed.ts:L34-L39](../../frontend/src/app/core/services/websocket-price-feed.ts#L34-L39), and the server answers with fresh snapshots.
+  [websocket-price-feed.ts:L63-L71](../../frontend/src/app/core/services/websocket-price-feed.ts#L63-L71), and the server answers with fresh snapshots.
 
 **Real example from today's logs (backend → Binance, same pattern on the server side):**
 ```
@@ -103,15 +103,15 @@ Many clients retrying in sync; jitter spreads them out.
 
 **How it works.**
 1. The Binance feed (one connection for all 11 coins) and the simulated feed call `publish()`, which in one round
-   trip stores latest + history and publishes to `prices:<SYMBOL>` [broker.py:L21-L29](../../backend/app/realtime/broker.py#L21-L29).
-2. Each backend **instance** holds **one** pattern subscription `prices:*` [hub.py:L35-L44](../../backend/app/realtime/hub.py#L35-L44)
+   trip stores latest + history and publishes to `prices:<SYMBOL>` [broker.py:L21-L30](../../backend/app/realtime/broker.py#L21-L30).
+2. Each backend **instance** holds **one** pattern subscription `prices:*` [hub.py:L57-L75](../../backend/app/realtime/hub.py#L57-L75)
    (Redis reports exactly 1 pattern subscriber right now).
 3. The hub's in-memory registry knows which local sockets want which symbol and forwards the message
-   [hub.py:L48-L54](../../backend/app/realtime/hub.py#L48-L54).
+   [hub.py:L79-L84](../../backend/app/realtime/hub.py#L79-L84).
 4. **Pub/sub is fire-and-forget:** Redis does *not* store channel messages. A client that connects later would
    miss everything, which is why `subscribe` first sends a **snapshot** built from the stored latest/history keys
-   [broker.py:L32](../../backend/app/realtime/broker.py#L32). The socket is registered *before* the snapshot is read,
-   so no tick falls into the gap [ws.py:L43](../../backend/app/routers/ws.py#L43).
+   [broker.py:L33](../../backend/app/realtime/broker.py#L33). The socket is registered *before* the snapshot is read,
+   so no tick falls into the gap [ws.py:L55](../../backend/app/routers/ws.py#L55).
 
 Try it: `docker exec -it price_tracker_redis redis-cli PSUBSCRIBE 'prices:*'` (watch the ticks flow), or
 `GET price:last:ETH`, or `LRANGE price:history:BTC -5 -1`.
@@ -143,13 +143,16 @@ replayable history.
 conveyor belt into a slow packer: boxes pile up, and you must slow the belt, add packers, or throw boxes away.
 
 **How it works / where it hits us.**
-- **Server side:** `_broadcast` sends to all sockets and *waits for all of them* [hub.py:L48-L54](../../backend/app/realtime/hub.py#L48-L54).
-  If one phone on a bad network can't receive fast enough, its TCP buffer fills and `send` waits, delaying
-  delivery for everyone else (Backlog #21, noted in the code [hub.py:L52](../../backend/app/realtime/hub.py#L52)).
+- **Server side (originally):** the hub sent each tick to all sockets and *waited for all of them*. If one phone on a
+  bad network couldn't receive fast enough, its TCP buffer filled and `send` waited, delaying delivery for everyone
+  else (Backlog #21). The load test in [Module 8.3](module-8-real-world-features.md#83-load-testing-and-fixing-slow-clients)
+  proved it: 5 slow clients made everyone's p99 7× worse. **Now fixed** with a per-client outbox
+  [client.py:L55-L67](../../backend/app/realtime/client.py#L55-L67); the hub's broadcast never waits
+  [hub.py:L79-L84](../../backend/app/realtime/hub.py#L79-L84).
 - **Client side:** ticks can arrive faster than it's worth rendering, so we **conflate**: `auditTime(250)` keeps only
   the latest state per 250 ms window [price.service.ts:L66](../../frontend/src/app/core/services/price.service.ts#L66).
 
-**The fix at scale.**
+**The fix (now implemented, steps 1–3; see Module 8.3).**
 1. Give every client its **own bounded queue** and its own sender task; the broadcaster only drops messages into
    queues, which never waits.
 2. **Conflate per symbol:** for prices only the *latest* value matters, so if BTC changes 3 times before a slow
@@ -157,7 +160,8 @@ conveyor belt into a slow packer: boxes pile up, and you must slow the belt, add
 3. If a client stays too far behind, **disconnect it** (it will reconnect and get a fresh snapshot).
 4. **Batch:** one frame every 250 ms containing all changed symbols instead of one frame per tick.
 
-**Why we haven't yet.** With a handful of local clients it doesn't matter; it's documented as debt instead of hidden.
+**Measured result:** with 5 slow clients, p99 for everyone else went from 266 ms back to 36 ms; under overload from
+10 s late to 65 ms. Step 4 (one batched frame per client) is still open.
 
 **Interview angle.** *"What happens when one client is slow?"* Without isolation it slows everyone; with per-client
 queues + conflation + eviction, only that client sees stale data. *"Why is conflation OK for prices but not for chat?"*

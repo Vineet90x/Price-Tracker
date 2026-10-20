@@ -85,8 +85,8 @@ version, system libraries, files, network).
 method + path, like a receptionist routing calls to the right desk.
 
 **How it works: the life of `POST /api/auth/login`.**
-1. Uvicorn (3.4) receives the HTTP request and hands it to FastAPI [main.py:L48](../../backend/app/main.py#L48).
-2. FastAPI finds the route among the included routers [main.py:L49-L51](../../backend/app/main.py#L49-L51).
+1. Uvicorn (3.4) receives the HTTP request and hands it to FastAPI [main.py:L51](../../backend/app/main.py#L51).
+2. FastAPI finds the route among the included routers [main.py:L52-L55](../../backend/app/main.py#L52-L55).
 3. The JSON body is parsed and **validated against a Pydantic model** [auth.py:L41-L43](../../backend/app/routers/auth.py#L41-L43)
    (email pattern, password 8–128 chars). Invalid → automatic **422** with details; our function never runs.
 4. **Dependencies** are resolved: `db: Session = Depends(get_db)` means "before calling me, run `get_db`"
@@ -120,12 +120,12 @@ successor of WSGI). `async`/`await` is the same event-loop idea as JavaScript (0
 
 **How it works.**
 - One uvicorn process runs **one event loop**. While a coroutine awaits the network (`await ws.receive_json()`
-  [ws.py:L36](../../backend/app/routers/ws.py#L36)), the loop serves other connections. That's how one
+  [ws.py:L48](../../backend/app/routers/ws.py#L48)), the loop serves other connections. That's how one
   process holds thousands of mostly idle WebSockets.
 - **Blocking code must not run on the loop.** FastAPI runs plain `def` endpoints (our auth endpoints: SQLite
   queries + Argon2 hashing, which take tens of ms of CPU [security.py:L14](../../backend/app/security.py#L14))
   in a **thread pool**, so the loop stays free. `async def` endpoints run *on* the loop.
-- Long-running background work starts in `lifespan` [main.py:L23-L40](../../backend/app/main.py#L23-L40): the Redis
+- Long-running background work starts in `lifespan` [main.py:L24-L43](../../backend/app/main.py#L24-L43): the Redis
   listener, the simulated feed and the Binance feed run as asyncio **tasks**, restarted with backoff if they crash
   [feeds.py:L20](../../backend/app/realtime/feeds.py#L20).
 

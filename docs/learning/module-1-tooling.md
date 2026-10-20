@@ -65,13 +65,13 @@ code runs* if you ever try to put a string there. Like spell-check for data shap
   see TypeScript, so **types don't exist at runtime**. That's why an `interface` can't be an Angular DI token
   but an abstract class can (ANGULAR_FRAMEWORK_GUIDE §23).
 - **Interfaces** describe object shapes: [price-feed.ts:L5-L10](../../frontend/src/app/core/services/price-feed.ts#L5-L10).
-- **Union types** list allowed values: [price-feed.ts:L21](../../frontend/src/app/core/services/price-feed.ts#L21) means the
+- **Union types** list allowed values: [price-feed.ts:L52](../../frontend/src/app/core/services/price-feed.ts#L52) means the
   status can *only* be one of those four strings.
 - **Generics** are type parameters: `signal<FeedStatus>('connecting')` means "a signal that only ever holds a FeedStatus".
 - **Strict mode** [tsconfig.json:L6](../../frontend/tsconfig.json#L6) turns on the useful checks (e.g. "this could be `null`, handle it").
   Angular's `strictTemplates` [tsconfig.json:L22](../../frontend/tsconfig.json#L22) type-checks the HTML templates too.
 
-**Example from our code.** `FEED_LABELS` is typed `Record<FeedStatus, string>` [app.ts:L9-L14](../../frontend/src/app/app.ts#L9-L14).
+**Example from our code.** `FEED_LABELS` is typed `Record<FeedStatus, string>` [app.ts:L11-L16](../../frontend/src/app/app.ts#L11-L16).
 If someone adds a fifth status (say `'stale'`) to `FeedStatus` and forgets the header label, the build **fails**
 instead of the header showing `undefined` in production. Another one: `p.time as UTCTimestamp`
 [stock-chart.ts:L32-L34](../../frontend/src/app/features/watchlist/components/stock-chart.ts#L32-L34) tells the chart library
@@ -179,7 +179,7 @@ checklist a robot runs every time you change something.
 - **Fakes/mocks** replace the slow or unpredictable outside world with something the test controls.
 
 **Example from our code (15 tests).**
-- [price.service.spec.ts:L8-L16](../../frontend/src/app/core/services/price.service.spec.ts#L8-L16): a fake price feed the test pushes ticks
+- [price.service.spec.ts:L8-L15](../../frontend/src/app/core/services/price.service.spec.ts#L8-L15): a fake price feed the test pushes ticks
   into by hand, to check things like "an out-of-order tick is ignored".
 - [auth.interceptor.spec.ts:L66](../../frontend/src/app/core/auth/auth.interceptor.spec.ts#L66): Angular's
   `HttpTestingController` plays the server, proving two simultaneous 401s cause only **one** refresh.

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, Subject, interval, merge, mergeMap, share } from 'rxjs';
 import { ASSETS, AssetInfo } from '../data/asset-universe';
-import { FeedEvent, FeedStatus, PriceFeed, PriceSnapshot } from './price-feed';
+import { ClockSync, FeedEvent, FeedStatus, PriceFeed, PriceSnapshot } from './price-feed';
 
 /** Keep 2 decimals for normal prices but 4 below 1, so DOGE (0.08) still moves (Backlog #1). */
 function roundPrice(price: number): number {
@@ -16,6 +16,7 @@ function roundPrice(price: number): number {
 @Injectable()
 export class SimulatedPriceFeed extends PriceFeed {
   readonly status = signal<FeedStatus>('simulated').asReadonly();
+  readonly clockSync = signal<ClockSync | null>(null).asReadonly(); // no server to sync with
 
   private readonly assets = new Map(inject(ASSETS).map((a) => [a.symbol, a] as const));
   private readonly current = new Map<string, number>();
@@ -34,6 +35,9 @@ export class SimulatedPriceFeed extends PriceFeed {
       this.snapshots.next({ type: 'snapshot', snapshot: this.seed(asset, now) });
     }
   }
+
+  /** The simulator has no server, so no server-side alerts either. */
+  setAuthToken(): void {}
 
   /** 25 fake history points, 2 s apart, ending at the base price, so the chart isn't empty. */
   private seed(asset: AssetInfo, now: number): PriceSnapshot {

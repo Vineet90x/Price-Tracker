@@ -123,6 +123,7 @@ export class PriceService {
   }
 
   private apply(event: FeedEvent): void {
+    if (event.type === 'alert') return; // private alert messages are AlertService's business
     if (event.type === 'snapshot') {
       const { snapshot } = event;
       this.history.set(snapshot.symbol, toPoints(snapshot.history));

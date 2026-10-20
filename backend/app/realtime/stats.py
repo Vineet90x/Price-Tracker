@@ -11,6 +11,8 @@ class Stats:
     published: int = 0
     ws_clients: int = 0
     ws_messages_sent: int = 0
+    ws_ticks_conflated: int = 0  # older unsent prices replaced by newer ones (slow clients)
+    ws_slow_disconnects: int = 0  # clients dropped because they stopped accepting messages
 
 
 stats = Stats()

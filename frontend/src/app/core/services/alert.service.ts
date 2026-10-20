@@ -1,41 +1,102 @@
-import { Injectable, Signal, signal, computed, inject } from '@angular/core';
-import { PriceService } from './price.service';
-import { PriceAlert, AlertToast } from '../models/alert.model';
+import {
+  DestroyRef,
+  Injectable,
+  PLATFORM_ID,
+  Signal,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, filter, map, tap } from 'rxjs';
+import { AlertToast, PriceAlert } from '../models/alert.model';
+import { AuthService } from '../auth/auth.service';
+import { FiredAlert, PriceFeed } from './price-feed';
 
+/** The alert as the backend sends it (snake_case, dates as text) */
+interface AlertDto {
+  id: number;
+  symbol: string;
+  direction: 'above' | 'below';
+  target_price: number;
+  status: 'active' | 'triggered';
+  created_at: string;
+  triggered_at: string | null;
+  triggered_price: number | null;
+}
+
+/** The backend sends UTC times without a "Z"; add it so the browser doesn't read them as local time. */
+function parseUtc(value: string): Date {
+  return new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value) ? value : value + 'Z');
+}
+
+function fromDto(dto: AlertDto): PriceAlert {
+  return {
+    id: dto.id,
+    symbol: dto.symbol,
+    direction: dto.direction,
+    targetPrice: dto.target_price,
+    status: dto.status,
+    createdAt: parseUtc(dto.created_at),
+    triggeredAt: dto.triggered_at ? parseUtc(dto.triggered_at) : null,
+    triggeredPrice: dto.triggered_price,
+  };
+}
+
+export type NotificationState = NotificationPermission | 'unsupported';
+
+/**
+ * Price alerts. The SERVER stores and checks them (they fire even with every tab closed);
+ * this service only lists, creates and cancels them, and reacts when the server says one fired.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class AlertService {
-  private readonly priceService = inject(PriceService);
+  private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
+  private readonly feed = inject(PriceFeed);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // ─── Internal State (writable signals, private) ───────────────────────────
 
-  /** All active + fired alerts. Private — mutated only by this service. */
+  /** Your alerts as last loaded from / changed on the server */
   private readonly _alerts = signal<PriceAlert[]>([]);
 
-  /**
-   * Toast queue. Each entry is auto-removed after AUTO_DISMISS_MS.
-   * Kept as an array so multiple alerts can fire in the same tick.
-   */
+  /** Toast queue. Each entry is auto-removed after AUTO_DISMISS_MS. */
   private readonly _toasts = signal<AlertToast[]>([]);
+
+  /** Whether the browser may show desktop notifications */
+  private readonly _notifications = signal<NotificationState>(
+    this.isBrowser && 'Notification' in window ? Notification.permission : 'unsupported',
+  );
 
   /** How long (ms) a toast stays visible before auto-dismissing */
   private readonly AUTO_DISMISS_MS = 5000;
 
-  // ─── Public Read-Only API (signals consumed by components) ───────────────
+  // ─── Public Read-Only API ─────────────────────────────────────────────────
 
-  /** Active alerts only — used by card bell icon to show badge count */
   readonly activeAlerts: Signal<PriceAlert[]> = computed(() =>
-    this._alerts().filter((a) => a.isActive)
+    this._alerts().filter((a) => a.status === 'active'),
   );
 
-  /** All current toast notifications — rendered by AppComponent */
-  readonly toasts: Signal<AlertToast[]> = computed(() => this._toasts());
+  /** Fired alerts, newest first: also the ones that fired while you were away */
+  readonly triggeredAlerts: Signal<PriceAlert[]> = computed(() =>
+    this._alerts()
+      .filter((a) => a.status === 'triggered')
+      .sort((a, b) => (b.triggeredAt?.getTime() ?? 0) - (a.triggeredAt?.getTime() ?? 0)),
+  );
+
+  readonly toasts = this._toasts.asReadonly();
+  readonly notificationState = this._notifications.asReadonly();
 
   /**
    * Active alert count per symbol (watchlist row badge).
-   * Rebuilt only when alerts change, not on every price tick: each row does one Map lookup
-   * instead of filtering the whole alert list (Backlog #9).
+   * Rebuilt only when alerts change, not on every price tick (Backlog #9).
    */
   readonly alertCountBySymbol: Signal<ReadonlyMap<string, number>> = computed(() => {
     const counts = new Map<string, number>();
@@ -46,49 +107,48 @@ export class AlertService {
   });
 
   constructor() {
-    // Subscribe to the shared price stream and check every tick.
-    // AlertService is a root singleton so this subscription lives for the app lifetime.
-    this.priceService.prices$.subscribe((prices) => {
-      this.checkAlerts(prices);
+    // Give the live connection our access token (or null on logout), so the server knows
+    // which socket is ours and can deliver our fired alerts to it.
+    effect(() => {
+      const token = this.auth.accessToken();
+      untracked(() => this.feed.setAuthToken(token));
     });
+
+    // Logged in → load alerts from the server. Logged out → forget them.
+    // isLoggedIn is a computed, so a token refresh (same user) doesn't reload.
+    effect(() => {
+      const loggedIn = this.auth.isLoggedIn();
+      untracked(() => (loggedIn ? this.load() : this._alerts.set([])));
+    });
+
+    this.feed.events$
+      .pipe(
+        filter((e) => e.type === 'alert'),
+        map((e) => e.alert),
+        takeUntilDestroyed(inject(DestroyRef)),
+      )
+      .subscribe((fired) => this.onFired(fired));
   }
 
   // ─── Public Actions ───────────────────────────────────────────────────────
 
-  /**
-   * Adds a new price alert.
-   * Called by the watchlist card form on submit.
-   *
-   * @param symbol   Ticker symbol (e.g. 'BTC')
-   * @param targetPrice  Target price that should trigger the alert
-   * @param direction  'above' | 'below'
-   */
-  addAlert(
-    symbol: string,
-    targetPrice: number,
-    direction: 'above' | 'below'
-  ): void {
-    const newAlert: PriceAlert = {
-      id: `${symbol}-${Date.now()}`,
-      symbol,
-      targetPrice,
-      direction,
-      isActive: true,
-      createdAt: new Date(),
-    };
-
-    // Signal mutation: always produce a new array (immutable update pattern)
-    this._alerts.update((current) => [...current, newAlert]);
+  /** Creates an alert on the server. Errors (e.g. 422 would_trigger_immediately) go to the caller. */
+  addAlert(symbol: string, targetPrice: number, direction: 'above' | 'below'): Observable<PriceAlert> {
+    return this.http
+      .post<AlertDto>('/api/alerts', { symbol, direction, target_price: targetPrice })
+      .pipe(
+        map(fromDto),
+        // The server may already have fired it (and told us over the socket) before this reply arrived.
+        tap((alert) =>
+          this._alerts.update((list) => (list.some((a) => a.id === alert.id) ? list : [alert, ...list])),
+        ),
+      );
   }
 
-  /**
-   * Manually removes an alert (e.g. user clicks ✕ on a pending alert).
-   * Deactivates by ID rather than splicing, keeping the array stable.
-   */
-  removeAlert(alertId: string): void {
-    this._alerts.update((current) =>
-      current.filter((a) => a.id !== alertId)
-    );
+  /** Cancels an alert. Removed from the list right away; reloaded if the server says no. */
+  removeAlert(alertId: number): void {
+    this._alerts.update((list) => list.filter((a) => a.id !== alertId));
+    this.http.delete(`/api/alerts/${alertId}`).subscribe({ error: () => this.load() });
   }
 
   /** Dismisses a toast by ID (called by the ✕ button on each toast) */
@@ -96,63 +156,51 @@ export class AlertService {
     this._toasts.update((current) => current.filter((t) => t.id !== toastId));
   }
 
-  // ─── Price Checking Logic ─────────────────────────────────────────────────
+  /** Asks the browser for permission to show desktop notifications (must follow a click). */
+  async enableDesktopNotifications(): Promise<void> {
+    if (this._notifications() === 'unsupported') return;
+    this._notifications.set(await Notification.requestPermission());
+  }
 
-  /**
-   * Runs on every price tick (~1.5s).
-   * For each active alert, checks whether the latest price has crossed the target.
-   *
-   * WHY this lives in AlertService (not PriceService):
-   * - Single Responsibility: PriceService generates prices; AlertService reacts to them.
-   * - AlertService can be removed/replaced without touching PriceService at all.
-   * - This mirrors the real production pattern: price feed is infrastructure,
-   *   alert logic is business logic — they live in different layers.
-   */
-  private checkAlerts(prices: { symbol: string; price: number }[]): void {
-    const priceMap = new Map(prices.map((p) => [p.symbol, p.price]));
+  // ─── Private ──────────────────────────────────────────────────────────────
 
-    let anyFired = false;
-    const firedToasts: AlertToast[] = [];
-
-    const updatedAlerts = this._alerts().map((alert) => {
-      if (!alert.isActive) return alert; // already fired, skip
-
-      const currentPrice = priceMap.get(alert.symbol);
-      if (currentPrice === undefined) return alert; // symbol not tracked yet
-
-      const triggered =
-        alert.direction === 'above'
-          ? currentPrice >= alert.targetPrice
-          : currentPrice <= alert.targetPrice;
-
-      if (triggered) {
-        anyFired = true;
-
-        // Build the toast notification for this fired alert
-        firedToasts.push({
-          id: `toast-${alert.id}`,
-          symbol: alert.symbol,
-          targetPrice: alert.targetPrice,
-          direction: alert.direction,
-          triggeredAt: new Date(),
-          triggeredAtPrice: currentPrice,
-        });
-
-        // Deactivate the alert (fire once — never again)
-        return { ...alert, isActive: false };
-      }
-
-      return alert;
+  private load(): void {
+    this.http.get<AlertDto[]>('/api/alerts').subscribe({
+      next: (dtos) => this._alerts.set(dtos.map(fromDto)),
+      error: () => undefined, // not logged in / server down: keep what we have
     });
+  }
 
-    // Only update signals if something actually fired (avoid noise renders)
-    if (anyFired) {
-      this._alerts.set(updatedAlerts);
-      this._toasts.update((current) => [...current, ...firedToasts]);
+  /** The server says one of our alerts fired. */
+  private onFired(fired: FiredAlert): void {
+    const triggered: PriceAlert = {
+      id: fired.id,
+      symbol: fired.symbol,
+      direction: fired.direction,
+      targetPrice: fired.targetPrice,
+      status: 'triggered',
+      createdAt: fired.triggeredAt,
+      triggeredAt: fired.triggeredAt,
+      triggeredPrice: fired.triggeredPrice,
+    };
+    this._alerts.update((list) => [triggered, ...list.filter((a) => a.id !== fired.id)]);
 
-      // Auto-dismiss each new toast after AUTO_DISMISS_MS
-      firedToasts.forEach((toast) => {
-        setTimeout(() => this.dismissToast(toast.id), this.AUTO_DISMISS_MS);
+    const toast: AlertToast = {
+      id: `toast-${fired.id}`,
+      symbol: fired.symbol,
+      targetPrice: fired.targetPrice,
+      direction: fired.direction,
+      triggeredAt: fired.triggeredAt,
+      triggeredAtPrice: fired.triggeredPrice,
+    };
+    this._toasts.update((current) => [...current, toast]);
+    setTimeout(() => this.dismissToast(toast.id), this.AUTO_DISMISS_MS);
+
+    // Tab in the background (another tab or app in front)? Also show an OS-level notification.
+    if (this.isBrowser && document.hidden && this._notifications() === 'granted') {
+      new Notification(`${fired.symbol} ${fired.direction} ${fired.targetPrice}`, {
+        body: `Price hit ${fired.triggeredPrice}`,
+        tag: toast.id, // the same alert never shows twice, even with several tabs open
       });
     }
   }

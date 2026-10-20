@@ -19,6 +19,10 @@ class FakeSocket {
   send(data: string): void {
     this.sent.push(JSON.parse(data));
   }
+  /** Everything sent except clock-sync pings (sent automatically on open) */
+  nonPing(): unknown[] {
+    return this.sent.filter((m) => (m as { type: string }).type !== 'ping');
+  }
   close(): void {
     this.readyState = 3;
   }
@@ -66,7 +70,7 @@ describe('WebSocketPriceFeed', () => {
     expect(feed.status()).toBe('connecting');
     first.serverOpens();
     expect(feed.status()).toBe('live');
-    expect(first.sent).toEqual([{ type: 'subscribe', symbols: ['BTC'] }]);
+    expect(first.nonPing()).toEqual([{ type: 'subscribe', symbols: ['BTC'] }]);
 
     first.serverSends({ type: 'tick', symbol: 'BTC', price: 1, open: 1, ts: 1 });
     expect(events).toEqual([{ type: 'tick', tick: { symbol: 'BTC', price: 1, open: 1, ts: 1 } }]);
@@ -75,7 +79,7 @@ describe('WebSocketPriceFeed', () => {
     first.serverCloses();
     expect(feed.status()).toBe('reconnecting');
     feed.subscribe(['ETH']);
-    expect(first.sent).toHaveLength(1);
+    expect(first.nonPing()).toHaveLength(1);
 
     // 3. After the backoff (~1 s) a new socket is opened and gets the FULL subscription list
     await new Promise((resolve) => setTimeout(resolve, 1400));
@@ -83,8 +87,31 @@ describe('WebSocketPriceFeed', () => {
     expect(second).toBeDefined();
     second.serverOpens();
     expect(feed.status()).toBe('live');
-    expect(second.sent).toEqual([{ type: 'subscribe', symbols: ['BTC', 'ETH'] }]);
+    expect(second.nonPing()).toEqual([{ type: 'subscribe', symbols: ['BTC', 'ETH'] }]);
 
+    sub.unsubscribe();
+  });
+
+  it('latency tracing: ticks carry timing, and ping/pong measures the clock difference', () => {
+    const feed = TestBed.runInInjectionContext(() => new WebSocketPriceFeed());
+    const events: FeedEvent[] = [];
+    const sub = feed.events$.subscribe((e) => events.push(e));
+    const socket = FakeSocket.instances[0];
+    socket.serverOpens();
+
+    // On open the feed pings right away with its current time
+    const ping = socket.sent.find((m) => (m as { type: string }).type === 'ping') as { t0: number };
+    expect(ping).toBeDefined();
+
+    // Server clock is 5000 ms ahead of ours; answer at once (round trip ≈ 0)
+    socket.serverSends({ type: 'pong', t0: ping.t0, server: ping.t0 + 5000 });
+    const clock = feed.clockSync()!;
+    expect(Math.abs(clock.offset - 5000)).toBeLessThan(50);
+    expect(clock.rtt).toBeLessThan(50);
+
+    socket.serverSends({ type: 'tick', symbol: 'BTC', price: 1, open: 1, ts: 100, rx: 150, tx: 160 });
+    const tick = events.find((e) => e.type === 'tick');
+    expect(tick?.type === 'tick' && tick.timing).toMatchObject({ exchange: 100, serverIn: 150, serverOut: 160 });
     sub.unsubscribe();
   });
 });

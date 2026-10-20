@@ -47,12 +47,13 @@ async def binance_feed(broker: PriceBroker) -> None:
         stats.binance_connections += 1
         log.info("Binance connected: 1 upstream socket for %d symbols", len(CRYPTO))
         async for raw in ws:
+            rx = int(time.time() * 1000)  # receive time, first thing (latency tracing: exchange → us)
             data = json.loads(raw)["data"]
             symbol = to_ours.get(data["s"])
             if symbol is None:
                 continue
             stats.binance_messages += 1
-            await broker.publish(symbol, float(data["c"]), float(data["o"]), int(data["E"]))
+            await broker.publish(symbol, float(data["c"]), float(data["o"]), int(data["E"]), rx)
 
 
 async def simulated_stock_feed(broker: PriceBroker, interval_s: float = 1.5) -> None:

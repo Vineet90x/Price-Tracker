@@ -1,5 +1,7 @@
 # PriceTracker
 
+[![CI](https://github.com/Vineet90x/Price-Tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/Vineet90x/Price-Tracker/actions/workflows/ci.yml)
+
 Live price tracker: Angular 22 (zoneless, signals) + FastAPI + Redis pub-sub, real crypto prices from Binance,
 email/password and Google login.
 

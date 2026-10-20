@@ -90,7 +90,7 @@ The module file explains each topic from zero; [ANGULAR_FRAMEWORK_GUIDE.md](ANGU
 | 5.1 | Polling vs long-polling vs SSE vs WebSockets | Why WebSockets for prices? When would SSE be enough? | [ws.py](../backend/app/routers/ws.py) | 📖 |
 | 5.2 | WebSocket lifecycle, reconnection, backoff + jitter | What happens when the server restarts? What's a thundering herd? | [websocket-price-feed.ts](../frontend/src/app/core/services/websocket-price-feed.ts) | 📖 |
 | 5.3 | Pub-sub and fan-out, Redis | Why does Binance get only one connection no matter how many users? | [broker.py](../backend/app/realtime/broker.py), [hub.py](../backend/app/realtime/hub.py) | 📖 |
-| 5.4 | Backpressure & slow consumers | What happens if one client's network is slow? | hub.py "Known limit", Backlog #21 | 📖 |
+| 5.4 | Backpressure & slow consumers | What happens if one client's network is slow? | [client.py](../backend/app/realtime/client.py), fixed in 8.3 | 📖 |
 
 ## Module 6: Infrastructure & DevOps
 
@@ -114,6 +114,17 @@ The module file explains each topic from zero; [ANGULAR_FRAMEWORK_GUIDE.md](ANGU
 | 7.2 | The "1 million users" walkthrough | Walk an interviewer through it in 5 minutes | 📖 |
 | 7.3 | Caching & CDNs | What can a CDN cache here, and what can't it? | 📖 |
 | 7.4 | Cost thinking | What would dominate the cloud bill at 1M users? | 📖 |
+
+## Module 8: Real-world features (built to fix real gaps)
+
+📖 **Lessons: [learning/module-8-real-world-features.md](learning/module-8-real-world-features.md)**
+
+| # | Topic | You should be able to answer | Status |
+|---|---|---|---|
+| 8.1 | Server-side alerts, idempotency | How does an alert fire exactly once with several servers? Why can't the browser do it? | 📖 |
+| 8.2 | Latency tracing, percentiles, clock sync | Why p95 not the average? How do you time across two machines with different clocks? Where does your latency go? | 📖 |
+| 8.3 | Load testing, conflation, capacity | What breaks first under load? What is conflation and when is it wrong? How many users per server, measured? | 📖 |
+| 8.4 | CI pipeline | What does your CI check? CI vs CD? Why no outside services in tests? | 📖 |
 
 ---
 

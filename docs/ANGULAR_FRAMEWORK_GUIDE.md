@@ -37,6 +37,7 @@
 30. [`InjectionToken` with a Factory](#30-injectiontoken-with-a-factory)
 31. [Per-Route Render Mode (`RenderMode.Client`) + Dev Proxy](#31-per-route-render-mode-rendermodeclient--dev-proxy)
 32. [`afterRenderEffect` + Loading a Third-Party Script (Google button)](#32-afterrendereffect--loading-a-third-party-script-google-button)
+33. [Services that React to Login: `effect` + `untracked` + `takeUntilDestroyed`](#33-services-that-react-to-login-effect--untracked--takeuntildestroyed)
 
 
 
@@ -55,9 +56,9 @@ Angular's compiler inspects the `imports` array of the standalone component and 
 
 ### Where Used in Our Codebase:
 - [`src/app/features/watchlist/watchlist.ts:L34`](../frontend/src/app/features/watchlist/watchlist.ts#L34)
-- [`src/app/features/watchlist/components/watchlist-row.ts:L12-L14`](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L12-L14), [`src/app/features/watchlist/components/alert-panel.ts:L39-L41`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L39-L41) (new in UI R4/R6)
+- [`src/app/features/watchlist/components/watchlist-row.ts:L12-L14`](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L12-L14), [`src/app/features/watchlist/components/alert-panel.ts:L55-L57`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L55-L57) (new in UI R4/R6)
 - [`src/app/features/portfolio/portfolio.ts:L23`](../frontend/src/app/features/portfolio/portfolio.ts#L23)
-- [`src/app/app.ts:L18`](../frontend/src/app/app.ts#L18)
+- [`src/app/app.ts:L20`](../frontend/src/app/app.ts#L20)
 
 ```typescript
 @Component({
@@ -92,9 +93,9 @@ When streaming live financial prices ticking every 1.5s, `Default` change detect
 
 ### Where Used in Our Codebase:
 - [`src/app/features/watchlist/watchlist.ts:L218`](../frontend/src/app/features/watchlist/watchlist.ts#L218)
-- [`src/app/features/watchlist/components/watchlist-row.ts:L58`](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L58), [`src/app/features/watchlist/components/alert-panel.ts:L126`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L126). Why it matters most in the row: see §21
+- [`src/app/features/watchlist/components/watchlist-row.ts:L58`](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L58), [`src/app/features/watchlist/components/alert-panel.ts:L172`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L172). Why it matters most in the row: see §21
 - [`src/app/features/portfolio/portfolio.ts:L75`](../frontend/src/app/features/portfolio/portfolio.ts#L75)
-- [`src/app/app.ts:L22`](../frontend/src/app/app.ts#L22)
+- [`src/app/app.ts:L24`](../frontend/src/app/app.ts#L24)
 
 ---
 
@@ -136,8 +137,8 @@ In an Angular Single Page Application (SPA):
 3. **`RouterLinkActive`**: Automatically attaches CSS classes to the active menu item so the user visually knows which tab they are currently viewing.
 
 ### Where Used in Our Codebase:
-- Import declaration: [`src/app/app.ts:L119`](../frontend/src/app/app.ts#L19)
-- HTML usage: nav links [`src/app/app.html:L15-L24`](../frontend/src/app/app.html#L15-L24), outlet [`src/app/app.html:L54`](../frontend/src/app/app.html#L54)
+- Import declaration: [`src/app/app.ts:L119`](../frontend/src/app/app.ts#L21)
+- HTML usage: nav links [`src/app/app.html:L15-L24`](../frontend/src/app/app.html#L15-L24), outlet [`src/app/app.html:L56`](../frontend/src/app/app.html#L56)
 
 ### Styling the active link: `ariaCurrentWhenActive` (UI R2)
 `routerLinkActive="some classes"` adds classes, but those classes compete with the link's base classes
@@ -182,7 +183,7 @@ Think of an RxJS Observable like a **conveyor belt in a factory**.
 - `map(...)` acts as a worker standing along the conveyor belt who transforms each ping into an updated list of stock prices.
 
 ### Where Used in Our Codebase:
-- Since Phase 2 the `interval` lives only in the **simulated** feed (`?feed=sim`, `?scale=N`): [`src/app/core/services/simulated-price-feed.ts:L26`](../frontend/src/app/core/services/simulated-price-feed.ts#L26)
+- Since Phase 2 the `interval` lives only in the **simulated** feed (`?feed=sim`, `?scale=N`): [`src/app/core/services/simulated-price-feed.ts:L27`](../frontend/src/app/core/services/simulated-price-feed.ts#L27)
 - The live feed is a WebSocket stream instead (§26). `PriceService` doesn't care which one it gets: it pipes `feed.events$` through `tap → auditTime → map` ([`src/app/core/services/price.service.ts:L62-L68`](../frontend/src/app/core/services/price.service.ts#L62-L68)).
 
 ---
@@ -250,7 +251,7 @@ It can be assigned directly to class properties, making code cleaner and easier 
 
 ### Where Used in Our Codebase:
 - [`src/app/features/watchlist/watchlist.ts:L221-L222`](../frontend/src/app/features/watchlist/watchlist.ts#L221-L222)
-- [`src/app/features/watchlist/components/watchlist-row.ts:L66`](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L66), [`src/app/features/watchlist/components/alert-panel.ts:L133`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L133)
+- [`src/app/features/watchlist/components/watchlist-row.ts:L66`](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L66), [`src/app/features/watchlist/components/alert-panel.ts:L179`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L179)
 
 ---
 
@@ -269,7 +270,7 @@ In Angular 17+, the `@switch` control flow block works just like a native JavaSc
 ```
 
 ### Where Used in Our Codebase:
-- **No longer used.** The `@switch` that picked a logo per symbol was removed in UI R4 (trading terminals show tickers, not logos). Kept here because you'll meet it again; the closest thing we still use is the `@if / @else if` chain in [`src/app/features/watchlist/components/alert-panel.ts:L105-L115`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L105-L115).
+- **No longer used.** The `@switch` that picked a logo per symbol was removed in UI R4 (trading terminals show tickers, not logos). Kept here because you'll meet it again; the closest thing we still use is the `@if / @else if` chain in [`src/app/features/watchlist/components/alert-panel.ts:L140-L149`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L140-L149).
 
 ---
 
@@ -476,7 +477,7 @@ A component's inputs are its **function parameters**; its outputs are the **even
 
 ### Where Used in Our Codebase
 - [`src/app/features/watchlist/components/watchlist-row.ts:L61-L64`](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L61-L64): `stock` (required), `selected`, `alertCount`, and the `selectSymbol` output
-- [`src/app/features/watchlist/components/alert-panel.ts:L129-L131`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L129-L131): `symbol`, `price`, `currency`
+- [`src/app/features/watchlist/components/alert-panel.ts:L175-L177`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L175-L177): `symbol`, `price`, `currency`
 - Parent bindings: [`src/app/features/watchlist/watchlist.ts:L27-L158`](../frontend/src/app/features/watchlist/watchlist.ts#L27-L158), [`src/app/features/watchlist/watchlist.ts:L29`](../frontend/src/app/features/watchlist/watchlist.ts#L29)
 - Still on decorators (not migrated yet, Backlog #16): [`src/app/features/watchlist/components/stock-chart.ts:L44-L45`](../frontend/src/app/features/watchlist/components/stock-chart.ts#L44-L45)
 
@@ -500,7 +501,7 @@ readonly currency = computed(() => (this.priceService.isCrypto(this.symbol()) ? 
 Every tick `stock()` is a brand-new object, so `symbol` re-runs. But it returns the **same string** (`'BTC' === 'BTC'`), so `currency` isn't marked stale and `isCrypto()` (a linear search over 25 assets) is skipped.
 If `currency` read `this.stock().symbol` directly, it would re-run on every tick for every row. This was half of Backlog #9.
 
-The other half: [alert.service.ts:L40-L46](../frontend/src/app/core/services/alert.service.ts#L40-L46) builds a `Map` of alert counts **only when alerts change**. Each row does one `Map.get` instead of filtering the alert list 6 times per tick.
+The other half: [alert.service.ts:L101-L107](../frontend/src/app/core/services/alert.service.ts#L101-L107) builds a `Map` of alert counts **only when alerts change**. Each row does one `Map.get` instead of filtering the alert list 6 times per tick.
 
 ### Common Mistakes
 - Returning a new object or array every time (`{ a: x }`, `.filter(...)`): a new reference is never `Object.is`-equal, so there's no cut-off. Return primitives, or pass an `equal` function to `computed`.
@@ -513,13 +514,15 @@ The other half: [alert.service.ts:L40-L46](../frontend/src/app/core/services/ale
 Since Angular 14, `new FormControl<number | null>(null)` knows its value type, and TypeScript checks every `.value` you read.
 
 ### Where Used in Our Codebase
-[`src/app/features/watchlist/components/alert-panel.ts:L140-L147`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L140-L147):
+[`src/app/features/watchlist/components/alert-panel.ts:L197-L207`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L197-L207):
 - `direction: new FormControl<Direction>('above', { nonNullable: true })`. `nonNullable` means `reset()` goes back to `'above'`, not `null`, so the type is `Direction`, not `Direction | null`.
 - `targetPrice: new FormControl<number | null>(null, …)`. `<input type="number">` gives a `number`, or `null` when empty.
-- `submit()` ([`src/app/features/watchlist/components/alert-panel.ts:L158`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L158)) checks `target === null` before `addAlert`, so TS knows it's a `number`. The old untyped `FormGroup` made `form.value` `any` (Backlog #6, fixed).
+- `submit()` ([`src/app/features/watchlist/components/alert-panel.ts:L225`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L225)) checks `target === null` before `addAlert`, so TS knows it's a `number`. The old untyped `FormGroup` made `form.value` `any` (Backlog #6, fixed).
 
 ### Validators that need live data
-[`src/app/features/watchlist/components/alert-panel.ts:L29-L35`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L29-L35): the validator takes a **getter** `() => number`, so it reads the latest price whenever it runs. The old code captured a plain number and therefore had to call `setValidators()` from the template on every tick to refresh it. That was a side effect during rendering (Backlog #4, fixed).
+[`src/app/features/watchlist/components/alert-panel.ts:L34-L42`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L34-L42): the validator takes **getters** (`() => number` for the live price, `() => Direction` for above/below), so it always reads the latest values when it runs. It blocks alerts that are already true, e.g. "above 100" while the price is 120 (Backlog #5, fixed; the server checks again). The old code captured a plain number and therefore had to call `setValidators()` from the template on every tick to refresh it. That was a side effect during rendering (Backlog #4, fixed).
+
+**A TypeScript trap we hit here:** writing `() => this.form.controls.direction.value` *inside* `new FormGroup({...})` fails with TS7022 ("'form' implicitly has type 'any' because it is referenced in its own initializer"): TypeScript can't work out `form`'s type while `form` is still being defined. Fix: create the direction control as its own field first, and use it in both places.
 
 ### Common Mistakes
 - `form.value` skips **disabled** controls; use `form.getRawValue()` if you need them.
@@ -533,7 +536,7 @@ Since Angular 14, `new FormControl<number | null>(null)` knows its value type, a
 `@let name = expression;` gives a long template expression a short name, like `const` in TypeScript.
 
 ### Where Used in Our Codebase
-[`src/app/features/watchlist/components/alert-panel.ts:L72`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L72): `@let tp = form.controls.targetPrice;` and then `tp.touched && tp.invalid`, instead of repeating `form.controls.targetPrice` six times. The old code called a component method `getAlertFormControl(...)` about 8 times per card per render.
+[`src/app/features/watchlist/components/alert-panel.ts:L107`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L107): `@let tp = form.controls.targetPrice;` and then `tp.touched && tp.invalid`, instead of repeating `form.controls.targetPrice` six times. The old code called a component method `getAlertFormControl(...)` about 8 times per card per render.
 
 ### Common Mistakes
 - `@let` is read-only and scoped to its block; you can't assign to it from an event handler.
@@ -547,7 +550,7 @@ Since Angular 14, `new FormControl<number | null>(null)` knows its value type, a
 `untracked(fn)` runs code inside an effect **without** recording its signal reads as dependencies.
 
 ### Where Used in Our Codebase
-[`src/app/features/watchlist/components/alert-panel.ts:L152-L155`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L152-L155):
+[`src/app/features/watchlist/components/alert-panel.ts:L212-L218`](../frontend/src/app/features/watchlist/components/alert-panel.ts#L212-L218):
 ```ts
 effect(() => {
   this.symbol();                                                 // trigger: re-run when the symbol changes
@@ -588,7 +591,7 @@ Flex and grid children default to "never smaller than my content". That breaks s
 
 | Problem | Fix | Where |
 |---|---|---|
-| Flex child won't shrink, so its `overflow-auto` never scrolls | `min-h-0` (overrides `min-height: auto`) | [app.html:L53](../frontend/src/app/app.html#L53), [`src/app/features/watchlist/watchlist.ts:L58`](../frontend/src/app/features/watchlist/watchlist.ts#L58) |
+| Flex child won't shrink, so its `overflow-auto` never scrolls | `min-h-0` (overrides `min-height: auto`) | [app.html:L55](../frontend/src/app/app.html#L55), [`src/app/features/watchlist/watchlist.ts:L58`](../frontend/src/app/features/watchlist/watchlist.ts#L58) |
 | Grid column `1fr` is really `minmax(auto, 1fr)` and won't shrink below the chart canvas | `minmax(0,1fr)` | [`src/app/features/watchlist/watchlist.ts:L52-L55`](../frontend/src/app/features/watchlist/watchlist.ts#L52-L55) |
 | `h-full` inside a parent with **auto** height resolves to 0 | Fixed height on mobile (`h-80`), fill only on desktop (`lg:flex-1`) | [`src/app/features/watchlist/watchlist.ts:L201`](../frontend/src/app/features/watchlist/watchlist.ts#L201) |
 
@@ -601,8 +604,8 @@ A wall socket doesn't care whether the power comes from solar or the grid; anyth
 `PriceService` asks for "a `PriceFeed`" (the plug shape) and Angular hands it whichever implementation the app was configured with.
 
 ### How It Works
-- TypeScript interfaces vanish at runtime, so they can't be DI tokens. An **abstract class** survives compilation, so it can be both the *type* and the *token*: [`src/app/core/services/price-feed.ts:L28`](../frontend/src/app/core/services/price-feed.ts#L28).
-- Three implementations: [`src/app/core/services/websocket-price-feed.ts:L18`](../frontend/src/app/core/services/websocket-price-feed.ts#L18) (live), [`src/app/core/services/simulated-price-feed.ts:L17`](../frontend/src/app/core/services/simulated-price-feed.ts#L17) (offline / scale test), [`src/app/core/services/price-feed.ts:L36`](../frontend/src/app/core/services/price-feed.ts#L36) (server prerender).
+- TypeScript interfaces vanish at runtime, so they can't be DI tokens. An **abstract class** survives compilation, so it can be both the *type* and the *token*: [`src/app/core/services/price-feed.ts:L59`](../frontend/src/app/core/services/price-feed.ts#L59).
+- Three implementations: [`src/app/core/services/websocket-price-feed.ts:L40`](../frontend/src/app/core/services/websocket-price-feed.ts#L40) (live), [`src/app/core/services/simulated-price-feed.ts:L17`](../frontend/src/app/core/services/simulated-price-feed.ts#L17) (offline / scale test), [`src/app/core/services/price-feed.ts:L71`](../frontend/src/app/core/services/price-feed.ts#L71) (server prerender).
 - A **factory provider** chooses one at startup: [`src/app/core/services/price-feed.provider.ts:L15-L21`](../frontend/src/app/core/services/price-feed.provider.ts#L15-L21). `new SimulatedPriceFeed()` inside a factory still runs in an injection context, so the class's own `inject()` calls work.
 - Registered once in [`src/app/app.config.ts:L31`](../frontend/src/app/app.config.ts#L31).
 
@@ -655,11 +658,11 @@ A guard is a **doorman** for a route. `authGuard` lets you into `/portfolio` onl
 ### Plain English Explanation
 `webSocket(url)` turns a WebSocket into an Observable you subscribe to (incoming messages) and also an Observer you `.next()` into (outgoing messages).
 
-### How It Works in Our Code ([`src/app/core/services/websocket-price-feed.ts:L18-L52`](../frontend/src/app/core/services/websocket-price-feed.ts#L18-L52))
+### How It Works in Our Code ([`src/app/core/services/websocket-price-feed.ts:L40-L95`](../frontend/src/app/core/services/websocket-price-feed.ts#L40-L95))
 - The socket only opens when someone **subscribes** to `events$` (cold). `openObserver` / `closeObserver` drive the `status` signal shown in the header.
 - **Reconnect:** `retry({ delay, resetOnSuccess: true })` re-subscribes after an error, which opens a new socket. `resetOnSuccess` restarts the attempt count once messages flow again.
-- **Clean close ≠ error.** When the server shuts down politely the stream *completes*, and `retry` would not fire. `concatWith(throwError(...))` ([`src/app/core/services/websocket-price-feed.ts:L46`](../frontend/src/app/core/services/websocket-price-feed.ts#L46)) turns completion into an error so one mechanism handles both.
-- **Backoff with jitter** ([`src/app/core/services/websocket-price-feed.ts:L11-L14`](../frontend/src/app/core/services/websocket-price-feed.ts#L11-L14)): 1 s, 2 s, 4 s … 30 s, ±20 %. Without jitter, 10,000 clients dropped by one server restart would all reconnect in the same millisecond (a "thundering herd").
+- **Clean close ≠ error.** When the server shuts down politely the stream *completes*, and `retry` would not fire. `concatWith(throwError(...))` ([`src/app/core/services/websocket-price-feed.ts:L83`](../frontend/src/app/core/services/websocket-price-feed.ts#L83)) turns completion into an error so one mechanism handles both.
+- **Backoff with jitter** ([`src/app/core/services/websocket-price-feed.ts:L33-L36`](../frontend/src/app/core/services/websocket-price-feed.ts#L33-L36)): 1 s, 2 s, 4 s … 30 s, ±20 %. Without jitter, 10,000 clients dropped by one server restart would all reconnect in the same millisecond (a "thundering herd").
 - **Resubscribe on reconnect:** a new socket knows nothing, so `openObserver` re-sends the whole `wanted` set. Tested with a fake WebSocket in `websocket-price-feed.spec.ts`.
 
 ### Common Mistakes
@@ -759,4 +762,40 @@ Loading the script ([google-identity.service.ts:L41-L58](../frontend/src/app/cor
 ### Common Mistakes
 - Using `ngAfterViewInit` with an element inside `@if`: it may not exist yet. Signal `viewChild` + `afterRenderEffect` handles "appears later".
 - Touching `window` / `document` during server rendering. Here it's safe because `/login` is `RenderMode.Client`, and we use `inject(DOCUMENT)` anyway.
+
+---
+
+## 33. Services that React to Login: `effect` + `untracked` + `takeUntilDestroyed`
+
+### Plain English Explanation
+`AlertService` must do things **when you log in or out**: load your alerts, hand your token to the live
+connection, forget everything on logout. Nobody "calls" it at those moments; it has to *notice*.
+An `effect` is exactly that: "whenever these signals change, run this".
+
+### Where Used in Our Code
+[alert.service.ts](../frontend/src/app/core/services/alert.service.ts) (constructor):
+```ts
+effect(() => {
+  const token = this.auth.accessToken();            // dependency: re-run when the token changes
+  untracked(() => this.feed.setAuthToken(token));   // the action (not a dependency)
+});
+effect(() => {
+  const loggedIn = this.auth.isLoggedIn();          // a computed: true/false
+  untracked(() => (loggedIn ? this.load() : this._alerts.set([])));
+});
+```
+- The **second** effect reads `isLoggedIn()`, a `computed`. When the token refreshes every 15 minutes, the token
+  changes but `isLoggedIn` stays `true`, so the computed's equality cut-off (§17) means **no reload**. Reading
+  `accessToken()` there instead would reload your alerts every 15 minutes for nothing.
+- `untracked(...)`: `load()` writes `_alerts`; without `untracked` the effect could start depending on signals it
+  merely touches during the action.
+
+**`takeUntilDestroyed`** ends an RxJS subscription automatically when its owner is destroyed:
+`this.feed.events$.pipe(..., takeUntilDestroyed(inject(DestroyRef))).subscribe(...)`. For a root service that's the
+end of the app, but the same line in a component prevents the most common Angular memory leak: subscriptions
+that outlive the component. (In the alert panel we call it without arguments, which works inside a constructor.)
+
+### Common Mistakes
+- Calling `effect()` outside an injection context (e.g. in a method): it needs the constructor or a field initializer.
+- Doing `this.someSignal.set(...)` in an effect that also reads `someSignal` → loops.
 

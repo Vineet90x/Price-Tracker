@@ -342,7 +342,7 @@ server keeps no memory of earlier requests, so *any* server instance can answer 
 
 - **Validation:** the request body must match a Pydantic model ([auth.py:L41-L42](../../backend/app/routers/auth.py#L41-L42)).
   Otherwise FastAPI answers **422** with details, before our code even runs.
-- **JSON over the WebSocket too:** each tick is a JSON message ([broker.py:L22](../../backend/app/realtime/broker.py#L22)).
+- **JSON over the WebSocket too:** each tick is a JSON message ([broker.py:L23](../../backend/app/realtime/broker.py#L23)).
 - **Honest note:** `/login`, `/refresh` and `/logout` are verbs (RPC style), which is common for auth.
   "Pure" REST would be `POST /sessions` and `DELETE /sessions/current`.
 

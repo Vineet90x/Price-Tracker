@@ -18,8 +18,9 @@ class PriceBroker:
     def __init__(self, redis: Redis) -> None:
         self.redis = redis
 
-    async def publish(self, symbol: str, price: float, open_: float, ts_ms: int) -> None:
-        tick = json.dumps({"symbol": symbol, "price": price, "open": open_, "ts": ts_ms})
+    async def publish(self, symbol: str, price: float, open_: float, ts_ms: int, rx_ms: int | None = None) -> None:
+        # ts = when the exchange says the price happened; rx = when OUR server received it (latency tracing)
+        tick = json.dumps({"symbol": symbol, "price": price, "open": open_, "ts": ts_ms, "rx": rx_ms or ts_ms})
         # One round-trip for 4 commands. transaction=False: we don't need MULTI/EXEC atomicity.
         pipe = self.redis.pipeline(transaction=False)
         pipe.set(f"price:last:{symbol}", tick)

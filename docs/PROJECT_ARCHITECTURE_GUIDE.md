@@ -405,23 +405,23 @@ Each item gets fixed only when we reach it in the step-by-step revision and you 
 | # | Severity | Where | Problem | Why it matters |
 |---|---|---|---|---|
 | 1 | Bug | ~~price.service.ts~~ | ~~`toFixed(2)` on every tick~~ | **Fixed (Phase 2)**: crypto prices are real; the simulated walk rounds to 4 decimals below 1 ([simulated-price-feed.ts:L7](../frontend/src/app/core/services/simulated-price-feed.ts#L7)) |
-| 2 | Bug | ~~price.service.ts~~ | ~~Upward-biased random walk~~ | **Fixed (Phase 2)**: symmetric ±0.4 % step in both simulators ([simulated-price-feed.ts:L62](../frontend/src/app/core/services/simulated-price-feed.ts#L62), [feeds.py:L65](../backend/app/realtime/feeds.py#L65)) |
-| 3 | Bug | ~~stock-chart.ts~~ | ~~Chart invents its own timestamps~~ | **Fixed (Phase 2)**: the service is the only source of chart time ([price.service.ts:L159](../frontend/src/app/core/services/price.service.ts#L159)); the chart draws its points ([stock-chart.ts:L174](../frontend/src/app/features/watchlist/components/stock-chart.ts#L174)) |
-| 4 | Design | ~~watchlist.ts~~ | ~~`getOrCreateAlertForm()` called from the template~~ | **Fixed in UI R6**: [alert-panel.ts](../frontend/src/app/features/watchlist/components/alert-panel.ts) has one form; the validator reads the price through a getter ([L29-L35](../frontend/src/app/features/watchlist/components/alert-panel.ts#L29-L35)), so nothing runs from the template |
-| 5 | Logic | [alert-panel.ts:L29-L35](../frontend/src/app/features/watchlist/components/alert-panel.ts#L29-L35) | Validator only blocks `target === current` (exact float equality on a moving price) | The real "fires instantly" case, e.g. "above 100" when price is already 120, is not blocked. **Still open** (moved, behaviour unchanged on purpose) |
-| 6 | Types | ~~watchlist.ts~~ | ~~Untyped `FormGroup`~~ | **Fixed in UI R6**: typed `FormControl<Direction>` / `FormControl<number \| null>` in [alert-panel.ts:L140-L147](../frontend/src/app/features/watchlist/components/alert-panel.ts#L140-L147) |
-| 7 | UI bug | ~~app.html~~ | ~~`animate-in…`, `animate-[shrink_…]` undefined~~ | **Fixed (UI R1 + R7)**: keyframes in [styles.css](../frontend/src/styles.css); toasts use `animate-toast-in` / `animate-shrink` ([app.html:L63](../frontend/src/app/app.html#L63), [L95](../frontend/src/app/app.html#L95)) |
+| 2 | Bug | ~~price.service.ts~~ | ~~Upward-biased random walk~~ | **Fixed (Phase 2)**: symmetric ±0.4 % step in both simulators ([simulated-price-feed.ts:L66](../frontend/src/app/core/services/simulated-price-feed.ts#L66), [feeds.py:L66](../backend/app/realtime/feeds.py#L66)) |
+| 3 | Bug | ~~stock-chart.ts~~ | ~~Chart invents its own timestamps~~ | **Fixed (Phase 2)**: the service is the only source of chart time ([price.service.ts:L160](../frontend/src/app/core/services/price.service.ts#L160)); the chart draws its points ([stock-chart.ts:L174](../frontend/src/app/features/watchlist/components/stock-chart.ts#L174)) |
+| 4 | Design | ~~watchlist.ts~~ | ~~`getOrCreateAlertForm()` called from the template~~ | **Fixed in UI R6**: [alert-panel.ts](../frontend/src/app/features/watchlist/components/alert-panel.ts) has one form; the validator reads the price through a getter ([L34-L42](../frontend/src/app/features/watchlist/components/alert-panel.ts#L34-L42)), so nothing runs from the template |
+| 5 | Logic | ~~alert-panel.ts~~ | ~~Validator only blocks `target === current`~~ | **Fixed (§17)**: alerts that are already true are blocked in the form ([alert-panel.ts:L34-L42](../frontend/src/app/features/watchlist/components/alert-panel.ts#L34-L42)) and on the server (`would_trigger_immediately`) |
+| 6 | Types | ~~watchlist.ts~~ | ~~Untyped `FormGroup`~~ | **Fixed in UI R6**: typed `FormControl<Direction>` / `FormControl<number \| null>` in [alert-panel.ts:L197-L207](../frontend/src/app/features/watchlist/components/alert-panel.ts#L197-L207) |
+| 7 | UI bug | ~~app.html~~ | ~~`animate-in…`, `animate-[shrink_…]` undefined~~ | **Fixed (UI R1 + R7)**: keyframes in [styles.css](../frontend/src/styles.css); toasts use `animate-toast-in` / `animate-shrink` ([app.html:L65](../frontend/src/app/app.html#L65), [L97](../frontend/src/app/app.html#L97)) |
 | 8 | Tests | ~~app.spec.ts~~ | ~~0 working tests~~ | **Fixed**: 15 tests in 4 files (app, auth interceptor, PriceService, WebSocket reconnect) |
-| 9 | Perf | ~~watchlist.ts~~ | ~~`alertCountForSymbol()` ×6 and `isCrypto()` per card per tick~~ | **Fixed in UI R4**: `alertCountBySymbol` Map rebuilt only when alerts change ([alert.service.ts:L40-L46](../frontend/src/app/core/services/alert.service.ts#L40-L46)); row `currency` computed cut off by an equal `symbol` ([watchlist-row.ts:L73-L75](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L73-L75)) |
+| 9 | Perf | ~~watchlist.ts~~ | ~~`alertCountForSymbol()` ×6 and `isCrypto()` per card per tick~~ | **Fixed in UI R4**: `alertCountBySymbol` Map rebuilt only when alerts change ([alert.service.ts:L101-L107](../frontend/src/app/core/services/alert.service.ts#L101-L107)); row `currency` computed cut off by an equal `symbol` ([watchlist-row.ts:L73-L75](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L73-L75)) |
 | 10 | Reactivity | [price.service.ts:L41](../frontend/src/app/core/services/price.service.ts#L41) | ~~Tracked list not a signal~~ **Fixed**: `trackedSymbols` is a signal ([price.service.ts:L35](../frontend/src/app/core/services/price.service.ts#L35)). **Still open**: chart history is a mutated Map, hence the `selectedRange` workaround | Low impact now |
-| 11 | Arch | [app.ts:L26](../frontend/src/app/app.ts#L26) | Root `App` injects `AlertService` → `PriceService` | The price feed (now a WebSocket) is open on every route, including `/login`. Acceptable: prices are global, and alerts must fire everywhere |
+| 11 | Arch | [app.ts:L28](../frontend/src/app/app.ts#L28) | Root `App` injects `AlertService` → `PriceService` | The price feed (now a WebSocket) is open on every route, including `/login`. Acceptable: prices are global, and alerts must fire everywhere |
 | 12 | Arch | [angular.json](../frontend/angular.json) vs [Dockerfile](../frontend/Dockerfile) | SSR/Express configured, but prod serves static files via nginx | `server.ts` is still dead code in prod. `/portfolio` and `/login` are now client-rendered; only `/watchlist` is prerendered. Decide: `outputMode: "static"` or Node SSR |
 | 13 | Bundle | build output | Initial **572 kB** > 500 kB budget (was 555) | Grew with HttpClient, auth and the WebSocket feed. Likely biggest win: PrimeNG + Aura used only for `<p-skeleton>`; measure with `ng build --stats-json` |
 | 14 | DevOps | [nginx.conf](../frontend/nginx.conf) | `add_header` inside a `location` drops server-level headers; `X-XSS-Protection` obsolete | Still open. (Fixed separately: absolute redirects to port 80, see §12) |
 | 15 | DevOps | [Dockerfile:L8](../frontend/Dockerfile#L8) | `npm ci … \|\| npm install …` | Silently hides lockfile drift; builds stop being reproducible |
 | 16 | Style | [stock-chart.ts:L44-L45](../frontend/src/app/features/watchlist/components/stock-chart.ts#L44-L45) | Decorator `@Input`/`@ViewChild` while the rest uses signals | `as any` is gone (`UTCTimestamp` via `toChartPoint`); decorators still open |
 | 17 | Structure | [watchlist.ts](../frontend/src/app/features/watchlist/watchlist.ts) | Was 551 lines: page + search + card + alert form in one component | **Mostly fixed in UI R4/R6**: now 243 lines; row and alert form are their own components. Search is still inline (could become `search-box`) |
-| 18 | Minor | [alert.service.ts:L69](../frontend/src/app/core/services/alert.service.ts#L69) | ID = `symbol-Date.now()` | Two alerts in the same ms collide; prefer `crypto.randomUUID()` |
+| 18 | Minor | ~~alert.service.ts~~ | ~~ID = `symbol-Date.now()`~~ | **Fixed (§17)**: alerts get database ids from the server |
 
 ---
 
@@ -466,13 +466,13 @@ What I'd reconsider at larger scale: self-host fonts (@fontsource) for privacy/G
 
 ### R2: Slim terminal header ✅
 
-**File:** [app.html:L1-L51](../frontend/src/app/app.html#L1-L51) (toast block below it unchanged)
+**File:** [app.html:L1-L53](../frontend/src/app/app.html#L1-L53) (toast block below it unchanged)
 
 - [L1](../frontend/src/app/app.html#L1): `h-dvh flex flex-col`. The page itself never scrolls; header + `main` fill exactly the viewport.
 - [L2](../frontend/src/app/app.html#L2): 48 px header (`h-12`) on `bg-surface-1`. Gradients, glow shadows and nav icons removed.
 - [L15-L24](../frontend/src/app/app.html#L15-L24): tab-style nav. Active tab is styled through `aria-current="page"` (set by `ariaCurrentWhenActive`), which always beats the base `text-ink-muted` on specificity. See ANGULAR_FRAMEWORK_GUIDE §4.
-- [L28-L36](../frontend/src/app/app.html#L28-L36): Feed status dot. Since Phase 2 it shows the real WebSocket state: Live / Reconnecting… / Connecting… / Simulated feed (`feedLabel`, `feedDotClass` in app.ts).
-- [L53](../frontend/src/app/app.html#L53): `main` is `flex-1 min-h-0 overflow-auto`. `min-h-0` overrides the flex default `min-height: auto`, without which `main` would grow to its content and never scroll.
+- [L29-L38](../frontend/src/app/app.html#L29-L38): Feed status dot. Since Phase 2 it shows the real WebSocket state: Live / Reconnecting… / Connecting… / Simulated feed (`feedLabel`, `feedDotClass` in app.ts).
+- [L55](../frontend/src/app/app.html#L55): `main` is `flex-1 min-h-0 overflow-auto`. `min-h-0` overrides the flex default `min-height: auto`, without which `main` would grow to its content and never scroll.
 
 **Verified:** `ng build` passes (initial bundle 555.8 → 552.8 kB, fewer utility classes). Prerendered `/watchlist` HTML has `aria-current="page"` on the Watchlist link; CSS contains `[aria-current=page]{color:var(--color-ink)}`.
 
@@ -515,11 +515,11 @@ New [watchlist-row.ts](../frontend/src/app/features/watchlist/components/watchli
 
 #### R6: `<app-alert-panel>`
 New [alert-panel.ts](../frontend/src/app/features/watchlist/components/alert-panel.ts) in the right pane, for the selected symbol only: active alerts list with ✕, Above/Below segmented control, target input, "Set alert".
-One typed form instead of a `Map<symbol, FormGroup>`; fixes Backlog #4 and #6. The target is cleared when the symbol changes (`effect` + `untracked`, [L152-L155](../frontend/src/app/features/watchlist/components/alert-panel.ts#L152-L155)).
+One typed form instead of a `Map<symbol, FormGroup>`; fixes Backlog #4 and #6. The target is cleared when the symbol changes (`effect` + `untracked`, [L212-L218](../frontend/src/app/features/watchlist/components/alert-panel.ts#L212-L218)).
 **Behaviour change:** the bell button on each card is gone. Select a row, and the alerts pane shows that symbol. Rows with alerts show an amber `● n`.
 
 #### R7: Toasts
-[app.html:L57-L99](../frontend/src/app/app.html#L57-L99): flat card with amber left edge, `motion-safe:animate-toast-in`, `animate-shrink` progress bar, `bottom-4 right-4` (moved from top-right in Phase 2: it covered the alerts pane), `role="status" aria-live="polite"` so screen readers announce alerts. `DecimalPipe` added to [app.ts:L119](../frontend/src/app/app.ts#L19).
+[app.html:L59-L101](../frontend/src/app/app.html#L59-L101): flat card with amber left edge, `motion-safe:animate-toast-in`, `animate-shrink` progress bar, `bottom-4 right-4` (moved from top-right in Phase 2: it covered the alerts pane), `role="status" aria-live="polite"` so screen readers announce alerts. `DecimalPipe` added to [app.ts:L119](../frontend/src/app/app.ts#L21).
 
 #### Extra: PrimeNG dark mode + Portfolio
 - [app.config.ts:L25](../frontend/src/app/app.config.ts#L25) `darkModeSelector: '.app-dark'` + [index.html:L2](../frontend/src/index.html#L2) `<html class="app-dark">`. PrimeNG now emits `.app-dark{color-scheme:dark}` after its `:root{color-scheme:light}`; equal specificity, later rule wins, so dark always applies. (Your PrimeNG `license` line in app.config.ts was kept untouched.)
@@ -642,18 +642,18 @@ simulated_stock_feed (14 NSE, 1.5 s) ─────┘     RPUSH/LTRIM price:hi
 ```
 
 ### Backend
-- **Producers** ([feeds.py](../backend/app/realtime/feeds.py)): `binance_feed` opens **one** combined-stream socket for all 11 crypto symbols ([feeds.py:L40](../backend/app/realtime/feeds.py#L40)); `simulated_stock_feed` random-walks the NSE stocks server-side ([feeds.py:L58](../backend/app/realtime/feeds.py#L58)). Both are wrapped in `run_forever` (restart with 1 → 30 s backoff, [feeds.py:L20](../backend/app/realtime/feeds.py#L20)), which covers Binance drops and Redis outages.
+- **Producers** ([feeds.py](../backend/app/realtime/feeds.py)): `binance_feed` opens **one** combined-stream socket for all 11 crypto symbols ([feeds.py:L40](../backend/app/realtime/feeds.py#L40)); `simulated_stock_feed` random-walks the NSE stocks server-side ([feeds.py:L59](../backend/app/realtime/feeds.py#L59)). Both are wrapped in `run_forever` (restart with 1 → 30 s backoff, [feeds.py:L20](../backend/app/realtime/feeds.py#L20)), which covers Binance drops and Redis outages.
 - MATIC is mapped to Binance's `POLUSDT` (renamed in 2024): [symbols.py:L15](../backend/app/symbols.py#L15).
 - **Broker** ([broker.py:L21-L31](../backend/app/realtime/broker.py#L21-L31)): one pipelined round-trip writes the latest price, appends history (last 300), and publishes to `prices:<SYMBOL>`. `snapshot()` gives a new subscriber the latest price + history, so the chart isn't empty.
 - **Hub** ([hub.py](../backend/app/realtime/hub.py)): one Redis pattern subscription **per backend instance**, then an in-memory registry `symbol → sockets` fans out locally. Redis connections grow with server instances, not with users.
-- **WebSocket endpoint** ([ws.py:L27](../backend/app/routers/ws.py#L27)): JSON protocol `subscribe` / `unsubscribe` → `snapshot` / `tick`. Unknown symbols ignored, max 50 per client. Registered in the hub *before* the snapshot is read, so no tick falls between the two.
-- `/api/health` ([main.py:L54](../backend/app/main.py#L54)) exposes counters. **Proof of fan-out:** with two clients connected, `binance_connections` stays at `1`.
+- **WebSocket endpoint** ([ws.py:L38](../backend/app/routers/ws.py#L38)): JSON protocol `subscribe` / `unsubscribe` → `snapshot` / `tick`. Unknown symbols ignored, max 50 per client. Registered in the hub *before* the snapshot is read, so no tick falls between the two.
+- `/api/health` ([main.py:L58](../backend/app/main.py#L58)) exposes counters. **Proof of fan-out:** with two clients connected, `binance_connections` stays at `1`.
 
 ### Frontend
 - `PriceFeed` abstraction ([price-feed.ts](../frontend/src/app/core/services/price-feed.ts)) with three implementations: WebSocket (live), Simulated (`?feed=sim`, `?scale=N`), Noop (server prerender). Chosen in [price-feed.provider.ts:L15-L21](../frontend/src/app/core/services/price-feed.provider.ts#L15-L21). **No component changed** when the data source did.
 - [websocket-price-feed.ts](../frontend/src/app/core/services/websocket-price-feed.ts): RxJS `webSocket`, status signal, reconnect with exponential backoff + jitter, re-subscribe everything on reconnect, clean-close handling.
 - [price.service.ts](../frontend/src/app/core/services/price.service.ts): applies ticks/snapshots to state, batches UI updates with `auditTime(250)`, owns chart history (fixes #3), ignores out-of-order ticks.
-- Header shows Live / Reconnecting… / Connecting… / Simulated feed ([app.ts:L9-L14](../frontend/src/app/app.ts#L9-L14)); NSE rows show a `SIM` tag in live mode ([watchlist-row.ts:L78](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L78)).
+- Header shows Live / Reconnecting… / Connecting… / Simulated feed ([app.ts:L11-L16](../frontend/src/app/app.ts#L11-L16)); NSE rows show a `SIM` tag in live mode ([watchlist-row.ts:L78](../frontend/src/app/features/watchlist/components/watchlist-row.ts#L78)).
 
 ### Decision Log
 ```
@@ -755,11 +755,11 @@ Environment variables live in **`.env`** at the repo root (git-ignored; template
 | # | Severity | Where | Problem | Why it matters |
 |---|---|---|---|---|
 | 19 | Security | [auth.py:L172](../backend/app/routers/auth.py#L172) | Refresh token never rotates | A stolen cookie works for 7 days unless the user logs in again. Rotation + reuse detection would limit it |
-| 20 | Scale | [main.py:L23](../backend/app/main.py#L23) | Feeds run inside the API process | Two backend instances = two Binance sockets and duplicate simulated ticks. Move feeds to one separate worker |
-| 21 | Scale | [hub.py:L52](../backend/app/realtime/hub.py#L52) | One slow client delays the broadcast loop | Needs a per-client bounded queue and dropping clients that fall behind |
+| 20 | Scale | [main.py:L24](../backend/app/main.py#L24) | Feeds run inside the API process | Two backend instances = two Binance sockets and duplicate simulated ticks. Move feeds to one separate worker |
+| 21 | Scale | ~~hub.py~~ | ~~One slow client delays the broadcast loop~~ | **Fixed (§19)**: per-client outbox + conflation + eviction ([client.py](../backend/app/realtime/client.py)); measured p99 266 → 36 ms |
 | 22 | Scale | [db.py](../backend/app/db.py) | SQLite + `create_all()` | Single writer, no migrations. Postgres + Alembic before multiple instances or schema changes |
 | 23 | Security | [docker-compose.yml](../docker-compose.yml) | ~~Default `JWT_SECRET`~~ **fixed**: secret now required from `.env` (random 64 chars). Still open: `COOKIE_SECURE=false`, Redis port published | Fine on a laptop, dangerous if deployed as is |
-| 24 | Abuse | [ws.py:L27](../backend/app/routers/ws.py#L27) | WebSocket has no auth, rate limit or connection cap | Anyone can open many sockets. Prices are public, but server resources aren't |
+| 24 | Abuse | [ws.py:L38](../backend/app/routers/ws.py#L38) | WebSocket has no auth, rate limit or connection cap | Anyone can open many sockets. Prices are public, but server resources aren't |
 | 25 | Abuse | [auth.py](../backend/app/routers/auth.py) | No login rate limiting / lockout | Password guessing is only slowed by Argon2 |
 | 26 | UX | [websocket-price-feed.ts](../frontend/src/app/core/services/websocket-price-feed.ts) | Status shows "Live" even when Redis/Binance are down but the socket is up | Add a server heartbeat / last-tick age to show "stale" |
 | 27 | Product | [portfolio.py](../backend/app/routers/portfolio.py) | Portfolio holdings are hard-coded demo data | Needs a holdings table + CRUD |
@@ -860,5 +860,125 @@ Decision: monorepo with sibling frontend/ and backend/ folders, shared docs/ and
 Options considered: keep backend inside the Angular project; two separate repositories
 Why I chose it: each app owns its build files and Docker context; one repo keeps docs, compose and both apps versioned together
 What I'd reconsider at larger scale: separate repos (or a monorepo tool like Nx/Turborepo) when separate teams own and deploy each part independently
+```
+
+---
+
+## 17. Server-side Price Alerts (2026-10-20)
+
+**Problem:** alerts lived only in the browser tab's memory. Closed tab = never fires; reload = gone.
+**Now:** alerts are stored in the database and checked **on the server**; the browser only shows them.
+Full simple-language walkthrough: [Module 8.1](learning/module-8-real-world-features.md#81-server-side-price-alerts).
+
+```
+POST /api/alerts ──► alerts table (status active)
+prices:<SYM> (Redis) ──► AlertEngine (in-memory index by symbol)
+                           └─ crossed? UPDATE … WHERE status='active' (exactly once) ──► Redis alerts:user:<id>
+                                                                                         └─► hub ──► that user's sockets
+```
+
+**Backend (new):** [models.py `PriceAlert`](../backend/app/models.py), [routers/alerts.py](../backend/app/routers/alerts.py) (`GET/POST /api/alerts`,
+`DELETE /api/alerts/{id}`, max 50 active per user, rejects alerts that would fire immediately),
+[realtime/alerts_engine.py](../backend/app/realtime/alerts_engine.py) (runs as a background task in `lifespan`), WebSocket `auth` message +
+per-user socket map in the hub, `user_id_from_token` in [deps.py](../backend/app/deps.py).
+**Frontend:** `AlertService` rewritten (loads/creates/cancels via HTTP, reacts to `alert` events from the socket,
+desktop notification when the tab is hidden), alert panel requires login and shows fired history, `PriceFeed`
+gained `setAuthToken()` and an `alert` event type.
+**Tests:** `backend/tests/e2e_alerts.py` (13 checks against a running backend, incl. "fires with no browser open",
+"other users never see it", "5 concurrent fire attempts → exactly 1"), `alert.service.spec.ts` (5 unit tests),
+browser run: alert fired while the app was closed shows as "✓ fired" after reopening.
+
+**Behaviour changes:** alerts need login; the 🔔 count and alerts survive reloads and other devices.
+**Known limits:** a fully closed browser gets no popup (needs Web Push, next step); every backend instance runs
+its own engine (duplicates prevented by the conditional update, but the work is repeated; shard by symbol at scale).
+
+```
+Step: Server-side alerts
+Decision: store alerts in the DB, evaluate them in a backend AlertEngine fed by Redis, deliver over the
+          existing WebSocket after a token "auth" message; exactly-once via UPDATE … WHERE status='active'
+Options considered: keep browser-side checks; query the DB per tick; separate notification service now;
+                    token in the WebSocket URL
+Why I chose it: fixes the "tab must be open" bug with no new infrastructure; in-memory index keeps ticks cheap;
+                the conditional update makes multi-instance firing safe; tokens in URLs leak into logs
+What I'd reconsider at larger scale: sorted per-symbol indexes, sharding engines by symbol, Web Push + a
+                                     notification queue with retries and rate limits
+```
+
+
+---
+
+## 18. Latency Tracing (2026-10-20)
+
+**Problem:** no one knew how long a price takes to reach the screen, or which step costs the time.
+**Now:** each live tick carries timestamps (`ts` exchange, `rx` received by us, `tx` sent by us); the browser adds
+`received` and `painted`, estimates the browser↔server clock difference with ping/pong (Cristian's algorithm), and
+shows p50/p95/p99 per step in a header panel (⏱). Full explanation and results: [Module 8.2](learning/module-8-real-world-features.md#82-latency-tracing-how-fast-do-prices-reach-the-screen).
+
+**Files:** backend `feeds.py` (rx), `broker.py` (rx in tick), `hub.py` (tx), `ws.py` (`ping` → `pong`);
+frontend `price-feed.ts` (`TickTiming`, `ClockSync`, `clockSync` signal), `websocket-price-feed.ts` (timing, ping
+every 10 s, offset from the lowest-RTT of the last 5 samples), new `latency.service.ts` (ring buffers of 600,
+percentiles once per second), new `shared/latency-badge/latency-badge.ts`, `app.ts` (`afterRenderEffect` →
+next frame → `markPainted()`). Tests: percentile maths + clock sync + timing parsing (24/24 total).
+
+**Measured (local, live Binance, 285 ticks):** server+Redis p50 2 ms, server→browser p50 2 ms, browser→screen
+p50 272 ms, total we control p50 281 ms / p95 338 ms. **~250 ms of that is our own `auditTime(250)` batching.**
+Decision pending (owner): keep 250 ms (fewer renders, Step 7) or lower / frame-based batching (lower latency).
+
+```
+Step: Latency tracing
+Decision: timestamps in the tick payload + ping/pong clock sync + in-browser percentiles; no new dependencies
+Options considered: averages; OpenTelemetry + Jaeger/Grafana; server-only timing
+Why I chose it: percentiles show the slow tail; zero new services; covers network and browser, where the time was
+What I'd reconsider at larger scale: Prometheus histograms + Grafana alerts, sampled browser telemetry,
+                                     OpenTelemetry traces, NTP-synced servers, an explicit latency SLO
+```
+
+---
+
+## 19. Load Testing + Slow-Client Fix (2026-10-20)
+
+**Tool:** `tools/loadtest/ws_load.py` (scenarios `slow` and `capacity`; no new dependencies).
+**Fix:** each WebSocket gets a `ClientConnection` ([client.py](../backend/app/realtime/client.py)) with its own sender task; ticks are
+**conflated** per symbol (newest replaces unsent older), other messages queue in order (max 200), and a client that
+can't take a message for 10 s is disconnected (close code 1013). The hub's broadcast became non-waiting
+([hub.py:L79-L84](../backend/app/realtime/hub.py#L79-L84)). All server→browser sends (snapshots, pongs, auth results, alerts)
+now go through the outbox, so two tasks never write to one socket at the same time.
+New counters in `/api/health`: `ws_ticks_conflated`, `ws_slow_disconnects`.
+
+| Scenario | Before p95 / p99 | After p95 / p99 |
+|---|---|---|
+| 50 msg/s, + 5 slow clients | 94 / 266 ms | 24 / 36 ms |
+| 200 msg/s overload | 9,913 / 10,147 ms | 38 / 65 ms (≈⅓ of ticks delivered; the rest replaced by newer ones) |
+
+**Capacity (one process, Windows laptop, test tool on the same machine):** 1,000 clients at 25/s arrival: 997 connected,
+p95 217 ms, ~180 KB per client. Arrivals ≥ 100/s: only ~300 connect (`WinError 1225`), because snapshot work starves
+`accept()` and the listen backlog overflows. Module 7's "20k per instance" estimate is corrected there.
+
+```
+Step: Slow clients / backpressure
+Decision: per-client outbox with per-symbol conflation, bounded direct queue, 10 s send timeout → disconnect
+Options considered: keep gather-and-wait; unbounded queues; drop-oldest queues; batching frames per client
+Why I chose it: isolates slow clients completely; memory per client is bounded; for prices, newest-wins is correct
+What I'd reconsider at larger scale: one batched frame per client per interval, lighter snapshots, multiple worker
+                                     processes, rate-limited accepts, a load test in CI with a p95 budget
+```
+
+---
+
+## 20. CI Pipeline (2026-10-20)
+
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml), four parallel jobs on every push to `main` and every pull request:
+**frontend** (`npm ci`, 24 unit tests, production build), **backend** (Redis service container, backend started with
+`ENABLE_BINANCE=false`, `tests/e2e_alerts.py`, slow-client load test with `--max-p95 500`), **docs**
+(`check_doc_links.py`), **docker** (both images build). README shows the status badge.
+Explained simply in [Module 8.4](learning/module-8-real-world-features.md#84-ci-a-robot-that-checks-every-push).
+**Not yet verified on GitHub:** every step was run locally; the workflow itself first runs after the next push.
+
+```
+Step: CI
+Decision: GitHub Actions, 4 parallel jobs, real Redis service, no external services in tests, a p95 performance budget
+Options considered: manual checks; Jenkins/GitLab CI; one sequential job
+Why I chose it: lives with the code, free, parallel, shows exactly which part broke; the budget catches perf regressions
+What I'd reconsider at larger scale: branch protection (green CI required), CD to staging/prod, nightly long load tests
 ```
 

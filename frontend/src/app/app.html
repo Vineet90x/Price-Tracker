@@ -24,6 +24,8 @@
       </nav>
 
       <div class="ml-auto flex items-center gap-3 sm:gap-4">
+        <app-latency-badge class="hidden sm:block" />
+
         <!-- Feed status: driven by the WebSocket connection state (PriceFeed.status) -->
         <div class="flex items-center gap-2 text-xs font-medium text-ink-muted" role="status" [attr.title]="feedLabel()">
           <span class="relative flex h-2 w-2">
