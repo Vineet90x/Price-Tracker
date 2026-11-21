@@ -1,7 +1,14 @@
 import { DOCUMENT, Injectable, inject, signal } from '@angular/core';
 import { Observable, concatWith, filter, map, retry, share, tap, throwError, timer } from 'rxjs';
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
-import { ClockSync, FeedEvent, FeedStatus, PriceFeed, PriceSnapshot, PriceTick } from './price-feed';
+import {
+  ClockSync,
+  FeedEvent,
+  FeedStatus,
+  PriceFeed,
+  PriceSnapshot,
+  PriceTick,
+} from './price-feed';
 
 interface AlertMessage {
   type: 'alert';
@@ -57,9 +64,14 @@ export class WebSocketPriceFeed extends PriceFeed {
   constructor() {
     super();
     const { protocol, host } = inject(DOCUMENT).location;
+    // Locally the dev proxy / nginx forwards /api (incl. WebSocket) to the backend.
+    // In production Vercel can't proxy WebSockets, so connect to the backend directly.
+    const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1');
+    const wsUrl = isLocal
+      ? `${protocol === 'https:' ? 'wss' : 'ws'}://${host}/api/ws/prices`
+      : 'wss://price-tracker-api.onrender.com/api/ws/prices';
     this.socket = webSocket<ServerMessage | ClientMessage>({
-      // Same origin as the page: the dev proxy / nginx forwards /api to the backend.
-      url: `${protocol === 'https:' ? 'wss' : 'ws'}://${host}/api/ws/prices`,
+      url: wsUrl,
       openObserver: {
         next: () => {
           this._status.set('live');
@@ -145,7 +157,8 @@ function toFeedEvent(msg: DataMessage, received: number): FeedEvent {
     };
   }
   const tick: PriceTick = { symbol: msg.symbol, price: msg.price, open: msg.open, ts: msg.ts };
-  if (msg.type === 'snapshot') return { type: 'snapshot', snapshot: { ...tick, history: msg.history } };
+  if (msg.type === 'snapshot')
+    return { type: 'snapshot', snapshot: { ...tick, history: msg.history } };
   const timing =
     msg.rx !== undefined && msg.tx !== undefined
       ? { exchange: msg.ts, serverIn: msg.rx, serverOut: msg.tx, received }
