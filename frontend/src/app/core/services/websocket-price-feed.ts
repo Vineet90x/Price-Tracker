@@ -69,7 +69,7 @@ export class WebSocketPriceFeed extends PriceFeed {
     const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1');
     const wsUrl = isLocal
       ? `${protocol === 'https:' ? 'wss' : 'ws'}://${host}/api/ws/prices`
-      : 'wss://price-tracker-api.onrender.com/api/ws/prices';
+      : 'wss://price-tracker-api-m88k.onrender.com/api/ws/prices';
     this.socket = webSocket<ServerMessage | ClientMessage>({
       url: wsUrl,
       openObserver: {

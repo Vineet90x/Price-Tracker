@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://price-tracker-api.onrender.com/api/:path*"
+      "destination": "https://price-tracker-api-m88k.onrender.com/api/:path*"
     }
   ]
 }
