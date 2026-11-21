@@ -7,12 +7,13 @@ The two parts of the app go to two different free hosts:
 | **Frontend** (Angular, `frontend/`) | **Vercel** | Hobby (free) |
 | **Backend** (FastAPI, `backend/`) | **Render** Web Service | Free |
 | **Redis** | **Render** Key Value | Free |
+| **Database** (users, logins, alerts) | **Neon** Postgres | Free |
 
 No credit card is needed for any of these.
 
 ```
-Browser ──► Vercel (Angular)  ──/api/* rewrite──►  Render (FastAPI) ──► Render Redis
-   └────────── WebSocket wss://…/api/ws/prices ──────────►┘
+Browser ──► Vercel (Angular)  ──/api/* rewrite──►  Render (FastAPI) ──► Render Redis (live prices)
+   └────────── WebSocket wss://…/api/ws/prices ──────────►┘        └──► Neon Postgres (users, alerts)
 ```
 
 The browser calls `/api/...` on the Vercel domain, and Vercel forwards it to Render. The
@@ -23,9 +24,10 @@ Vercel can't forward WebSockets, so the live-price socket connects to Render dir
 
 - **The backend sleeps after 15 minutes with no visitors.** The next visit takes **~30-60 seconds**
   to wake it up. Prices start streaming once it's awake. (Optional fix: see *Keep it awake* at the end.)
-- **Saved data is temporary.** Users, portfolios and alerts are kept in SQLite inside the container,
-  which is wiped whenever the backend restarts, redeploys or wakes from sleep. Visitors just
-  register again. Live prices are not affected.
+- **Use Neon for saved data (Step 2c).** Render's free disk is wiped whenever the backend restarts,
+  redeploys or wakes from sleep. Without `DATABASE_URL`, the backend falls back to a SQLite file
+  on that disk, and users and alerts disappear. With Neon they survive.
+- **Neon's free database also sleeps** after 5 minutes idle. It wakes in about a second on the next query.
 
 ---
 
@@ -136,6 +138,7 @@ Create both services by hand from the dashboard. Don't use **Blueprint**: it ask
    | `COOKIE_SECURE` | `true` |
    | `ENABLE_BINANCE` | `true` |
    | `GOOGLE_CLIENT_ID` | your Google client ID (leave this row out to hide Google login) |
+   | `DATABASE_URL` | the Neon connection string from 2c (you can add it later) |
 
 5. Under **Advanced**, set **Health Check Path** to `/api/health`.
 6. Click **Deploy Web Service** and wait for the log to show `Uvicorn running on http://0.0.0.0:8000`.
@@ -148,6 +151,31 @@ Create both services by hand from the dashboard. Don't use **Blueprint**: it ask
 > Check the URL Render shows at the top of the service page. If it isn't exactly
 > `price-tracker-api.onrender.com` (for example because the name was taken), update
 > `vercel.json` and `websocket-price-feed.ts` with the real URL, then push again.
+
+### 2c. Create the database on Neon (keeps users and alerts)
+
+1. Go to <https://neon.tech> and sign up (GitHub or Google login works; no card needed).
+2. Create a project:
+   - **Project name:** `price-tracker`
+   - **Postgres version:** the default
+   - **Region:** **AWS Asia Pacific (Singapore)**, close to the Render backend
+3. On the project dashboard, click **Connect**. Keep the defaults (branch `production`/`main`,
+   database `neondb`, role `neondb_owner`) and copy the **connection string**. It looks like:
+   ```
+   postgresql://neondb_owner:xxxxxxxx@ep-xxxx-xxxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+   ```
+   It contains the password, so keep it private.
+4. In Render → `price-tracker-api` → **Environment**, add:
+
+   | Key | Value |
+   |---|---|
+   | `DATABASE_URL` | the connection string, pasted as is |
+
+   The backend switches the `postgresql://` prefix to the psycopg driver itself, so you don't need to edit it.
+5. Click **Save, rebuild, and deploy**. On startup the backend creates the `users`, `sessions` and
+   `alerts` tables in Neon. You can see them in Neon → **Tables**.
+6. Check it: register on the site, then in Render click **Manual Deploy → Restart service**.
+   You should still be able to log in with the same account.
 
 ---
 
@@ -196,7 +224,8 @@ Open the backend health URL first so it's awake, then open your Vercel URL and c
 | Only the NSE stocks move, no crypto | Binance blocked the region. The service must be in **Singapore** or **Frankfurt**, not a US region (you can't change the region later, so recreate the service). |
 | `/api/health` shows `"redis": false` | `REDIS_URL` is wrong, or Redis is in a different region. Use the **Internal** URL, with both services in the same region. |
 | Logged out after a refresh | `COOKIE_SECURE` must be `true`, and the site must be opened over `https://`. |
-| My account disappeared | Expected on the free tier: data resets when the backend restarts or sleeps. |
+| My account disappeared | `DATABASE_URL` isn't set on Render, so the backend is using SQLite on the temporary disk. Do Step 2c. |
+| Render log: `connection ... failed` / `password authentication failed` | The Neon connection string was copied wrong or its password was reset. Copy it again from Neon → **Connect**. |
 | Google popup error "origin not allowed" | Add the Vercel URL to the OAuth client's Authorized JavaScript origins (Step 4). |
 
 ---
@@ -209,7 +238,7 @@ So a recruiter doesn't hit the 1-minute wake-up:
 2. Create a job that opens `https://price-tracker-api.onrender.com/api/health` **every 10 minutes**.
 
 Render's free plan gives 750 hours/month, which is enough to keep one service running all month.
-Saved data is still wiped on each redeploy.
+`/api/health` doesn't query Postgres, so this doesn't keep Neon awake or use up its free compute hours.
 
 ## Updating later
 

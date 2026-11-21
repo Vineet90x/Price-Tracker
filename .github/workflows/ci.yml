@@ -34,8 +34,17 @@ jobs:
         run: npx ng build
 
   backend:
-    name: Backend (end-to-end alerts + load-test budget)
+    name: Backend on ${{ matrix.db.name }} (end-to-end alerts + load-test budget)
     runs-on: ubuntu-latest
+    # Same tests twice: SQLite (local dev) and Postgres (production, Neon)
+    strategy:
+      fail-fast: false
+      matrix:
+        db:
+          - name: SQLite
+            url: sqlite:///./data/ci.db
+          - name: Postgres
+            url: postgresql://ci:ci@localhost:5432/ci
     services:
       # A real Redis next to the job, like docker-compose does locally
       redis:
@@ -43,11 +52,21 @@ jobs:
         ports: ["6379:6379"]
         options: >-
           --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+      # Started for both runs (services can't be conditional); only the Postgres run uses it
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s --health-timeout 3s --health-retries 10
     env:
       JWT_SECRET: ci-only-secret-not-used-anywhere-else
       ENABLE_BINANCE: "false" # no calls to outside services in tests; simulated stocks still tick
       REDIS_URL: redis://localhost:6379/0
-      DATABASE_URL: sqlite:///./data/ci.db
+      DATABASE_URL: ${{ matrix.db.url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

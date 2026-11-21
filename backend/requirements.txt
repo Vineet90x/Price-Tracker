@@ -5,3 +5,4 @@ pyjwt[crypto]==2.10.1
 pwdlib[argon2]==0.2.1
 websockets==14.1
 redis==5.2.1
+psycopg[binary]==3.2.13
